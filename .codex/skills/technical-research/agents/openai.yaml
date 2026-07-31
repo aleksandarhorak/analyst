@@ -1,0 +1,4 @@
+interface:
+  display_name: "Technical Research"
+  short_description: "Research technologies, papers, docs, and benchmarks before choosing."
+  default_prompt: "Use $technical-research to research current technology choices, papers, official documentation, public benchmarks, library options, and tradeoffs before making a technical decision."

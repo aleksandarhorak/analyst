@@ -1,0 +1,4 @@
+interface:
+  display_name: "C++ Performance Benchmark"
+  short_description: "Benchmark and validate C++ performance-sensitive changes."
+  default_prompt: "Use $cpp-performance-benchmark for hot-path changes, benchmark work, profiling, baseline comparison, cache layout, or SIMD decisions."

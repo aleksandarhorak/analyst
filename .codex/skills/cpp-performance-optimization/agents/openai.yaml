@@ -1,0 +1,4 @@
+interface:
+  display_name: "C++ Performance Optimization"
+  short_description: "Profile hot paths and preserve behavior."
+  default_prompt: "Use $cpp-performance-optimization to trace this C++ execution path, optimize the measured bottleneck, and prove behavior is preserved."

@@ -1,0 +1,13 @@
+name: Agent Quality Gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  agent-quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run agent quality gate
+        run: scripts/agent-quality-gate.sh --ci

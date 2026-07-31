@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Tested Delivery"
+  short_description: "Deliver work through tested automatic merges."
+  default_prompt: "Use $git-tested-delivery to complete work on a fix or feature branch and merge it into dev after verification passes."

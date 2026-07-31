@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+branch="$(git branch --show-current)"
+merge_head="$(git rev-parse --git-path MERGE_HEAD)"
+
+if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+  exec "${repo_root}/scripts/agent-quality-gate.sh" --ci
+fi
+
+if [ "$branch" = 'dev' ] && [ -f "$merge_head" ]; then
+  "${repo_root}/scripts/check-agent-branch.sh" --allow-dev "$branch"
+  exec "${repo_root}/scripts/agent-quality-gate.sh"
+fi
+
+"${repo_root}/scripts/check-agent-branch.sh" "$branch"
+exec "${repo_root}/scripts/agent-quality-gate.sh" --stage

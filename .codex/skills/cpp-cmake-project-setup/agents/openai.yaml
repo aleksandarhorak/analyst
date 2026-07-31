@@ -1,0 +1,4 @@
+interface:
+  display_name: "C++ CMake Project Setup"
+  short_description: "Set up CMake installs, exports, and presets."
+  default_prompt: "Use $cpp-cmake-project-setup to add reproducible CMake install rules, package exports, and shared build presets."

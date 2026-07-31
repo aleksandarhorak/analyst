@@ -1,0 +1,66 @@
+# CMake and build directories
+build/
+build*/
+/install/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+install_manifest.txt
+
+# Generated compile databases and dependency files
+compile_commands.json
+*.d
+
+# C++ build outputs
+*.o
+*.obj
+*.lo
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.gcov
+coverage/
+htmlcov/
+*.profraw
+*.profdata
+
+# Sanitizer and runtime logs
+asan.log*
+tsan.log*
+ubsan.log*
+lsan.log*
+*.log
+
+# Package and generated artifacts
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+dist/
+out/
+generated/
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

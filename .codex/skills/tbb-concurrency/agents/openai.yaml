@@ -1,0 +1,4 @@
+interface:
+  display_name: "TBB Concurrency"
+  short_description: "Design and validate TBB concurrency."
+  default_prompt: "Use this skill for TBB task arenas, parallel algorithms, pipelines, concurrent containers, TSAN, and contention work."
