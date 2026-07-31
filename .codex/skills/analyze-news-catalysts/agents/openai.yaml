@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze News Catalysts"
+  short_description: "Verify financial news and map catalyst transmission"
+  default_prompt: "Use $analyze-news-catalysts to verify this news, reconstruct timing, and assess material market transmission."

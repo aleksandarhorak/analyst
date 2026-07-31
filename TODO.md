@@ -18,12 +18,12 @@ temporary notes.
       trading, company analysis, economic foundations, and financial-news
       research, with URLs, methods, findings, limitations, and skill
       implications.
-- [ ] Replace C++/CMake/TBB operating policy and skills with a compact
+- [x] Replace C++/CMake/TBB operating policy and skills with a compact
       finance-first policy and bounded, nonduplicative finance skills.
 - [ ] Preserve and adapt technical research, implementation planning, tested Git
       delivery, CI, branch checks, and repository quality gates so the agent can
       continue improving safely.
-- [ ] Encode professional controls for source provenance, point-in-time data,
+- [x] Encode professional controls for source provenance, point-in-time data,
       uncertainty, valuation ranges, forecast calibration, transaction costs,
       portfolio risk, client suitability, conflicts, and jurisdiction-sensitive
       compliance.
@@ -44,12 +44,12 @@ temporary notes.
 - [x] Stage 1: write `research/financial-analyst-agent/README.md`,
       `sources.md`, `papers/manifest.md`, and `decision.md` from the completed
       research; verify category counts and source links.
-- [ ] Stage 1: run the stage quality gate, inspect the staged diff, and commit
+- [x] Stage 1: run the stage quality gate, inspect the staged diff, and commit
       the evidence dossier.
-- [ ] Stage 2: remove nine C++/CMake/TBB skills and their UI metadata.
-- [ ] Stage 2: replace root agent policy with finance-first mission, research,
+- [x] Stage 2: remove nine C++/CMake/TBB skills and their UI metadata.
+- [x] Stage 2: replace root agent policy with finance-first mission, research,
       analysis, brokerage, risk, safety, workflow, and Git standards.
-- [ ] Stage 2: create and validate the ten selected finance skills and adapt the
+- [x] Stage 2: create and validate the ten selected finance skills and adapt the
       retained technical-research and implementation-planning skills.
 - [ ] Stage 2: run all skill validators and the stage quality gate, inspect the
       staged diff, and commit the capability migration.

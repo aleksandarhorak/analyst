@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Macroeconomy"
+  short_description: "Analyze macro releases, regimes, policy, and distributions"
+  default_prompt: "Use $analyze-macroeconomy to assess the macro regime with point-in-time data, uncertainty, and market implications."

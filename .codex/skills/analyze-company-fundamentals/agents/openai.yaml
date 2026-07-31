@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Company Fundamentals"
+  short_description: "Assess business quality, accounting, and financial health"
+  default_prompt: "Use $analyze-company-fundamentals to assess this company's business quality, accounts, risks, and financial health."

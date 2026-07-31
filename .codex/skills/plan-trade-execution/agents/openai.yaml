@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Trade Execution"
+  short_description: "Design cost-aware execution and transaction-cost review"
+  default_prompt: "Use $plan-trade-execution to design and evaluate a cost-aware execution plan without placing an order."

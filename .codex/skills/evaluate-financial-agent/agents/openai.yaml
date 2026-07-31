@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evaluate Financial Agent"
+  short_description: "Regression-test financial analysis quality and safety"
+  default_prompt: "Use $evaluate-financial-agent to score this financial-agent change on evidence, accuracy, uncertainty, safety, and usefulness."
