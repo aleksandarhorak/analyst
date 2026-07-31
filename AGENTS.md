@@ -49,6 +49,25 @@ planning or acting.
 The root policy owns non-negotiable conduct. Skills own detailed procedures;
 do not duplicate their full templates here.
 
+## Daily Symbol Watchlist
+
+At the start of recurring market, company, portfolio, or trading analysis, read
+`SYMBOLS.md` and use it as the maintained research universe. It is a watchlist,
+not an automatic buy list or a substitute for current evidence, valuation,
+portfolio fit, suitability, or execution analysis.
+
+- Keep instrument identifiers, names, asset classes, and short descriptions
+  current. Resolve platform aliases to an exact exchange-listed security,
+  contract, fund, index, or other tradable instrument before using market data.
+- Update status, as-of time, horizon, confidence, thesis, valuation, risks,
+  invalidation, and next review only after using the relevant finance skills.
+- `Investment candidate` means research supports further consideration at the
+  stated price and horizon; it is not a personalized recommendation.
+- Add symbols when there is a documented research reason. Archive removed
+  symbols with the date and reason instead of erasing their history.
+- Record material status changes in the file's change log. Never backfill a
+  historical view with information that was unavailable at the recorded time.
+
 ## 1. Evidence And Time
 
 For decision-relevant work, state the instrument or entity, market, currency,
