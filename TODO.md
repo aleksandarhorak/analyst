@@ -17,20 +17,20 @@ temporary notes.
 - [x] Research primary behavioral-finance evidence on attention, sentiment,
       underreaction, overreaction, loss aversion, extrapolation, herding, and
       trader response; record full-review findings and limitations.
-- [ ] Add a bounded market-behavior skill and a batch symbol-research skill that
+- [x] Add a bounded market-behavior skill and a batch symbol-research skill that
       triggers on `do symbols research` and composes existing evidence, news,
       macro, company, valuation, portfolio, and execution skills.
-- [ ] Create deterministic per-symbol research folders from the active universe
+- [x] Create deterministic per-symbol research folders from the active universe
       in `SYMBOLS.md`, preserving decision history as symbols are added or
       archived.
-- [ ] Add root `REPORT.md` and per-symbol templates for current price/news,
+- [x] Add root `REPORT.md` and per-symbol templates for current price/news,
       behavioral response, short-term and long-term up/flat/down probabilities,
       confidence, risks, invalidation, and evidence links.
-- [ ] Define short-term horizons as 1 trading day and 2 weeks, long-term horizons
+- [x] Define short-term horizons as 1 trading day and 2 weeks, long-term horizons
       as 1 month and 2 months, with USD as reporting currency and separate
       unlevered and 5x linear-exposure risk before financing, margin calls, and
       liquidation effects.
-- [ ] Require current online sources, exact instrument resolution, probability
+- [x] Require current online sources, exact instrument resolution, probability
       sums of 100%, explicit flat bands, no invented probabilities, and a visible
       `insufficient evidence` result when calibration is not defensible.
 - [ ] Validate skills, folder synchronization, report coverage, adverse cases,
@@ -50,11 +50,11 @@ temporary notes.
 - [x] Stage 1: complete behavioral-finance paper review and write research
       `README.md`, `sources.md`, `papers/manifest.md`, and `decision.md`.
 - [x] Stage 1: verify research inventory, run the stage gate, review, and commit.
-- [ ] Stage 2: initialize and implement `analyze-market-behavior` and
+- [x] Stage 2: initialize and implement `analyze-market-behavior` and
       `research-symbol-watchlist` with references and deterministic helpers.
-- [ ] Stage 2: create/synchronize every active symbol folder and root report,
+- [x] Stage 2: create/synchronize every active symbol folder and root report,
       then update `AGENTS.md`, `SYMBOLS.md`, and skill routing.
-- [ ] Stage 2: validate both skills, templates, links, horizons, probability
+- [x] Stage 2: validate both skills, templates, links, horizons, probability
       controls, and leverage safeguards; run the stage gate and commit.
 - [ ] Stage 3: extend integrity checks and add representative regression fixtures
       for stale prices, missing news, ambiguous aliases, probability arithmetic,

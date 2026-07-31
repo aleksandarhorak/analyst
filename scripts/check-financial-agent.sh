@@ -27,6 +27,8 @@ required_skills=(
   value-company-and-forecast
   analyze-macroeconomy
   analyze-news-catalysts
+  analyze-market-behavior
+  research-symbol-watchlist
   plan-trade-execution
   manage-portfolio-risk
   build-investment-thesis
