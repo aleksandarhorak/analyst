@@ -25,8 +25,8 @@ pagination.
 - **Authors/year/venue:** Harrison Hong and Jeremy C. Stein, 1999, *Journal of
   Finance* 54(6).
 - **Source:** https://doi.org/10.1111/0022-1082.00184; reviewed author copy:
-  https://users.ssc.wisc.edu/~cengel/IMF/HongSteinJF1999.pdf; 43 pages; full text
-  reviewed: yes.
+  https://users.ssc.wisc.edu/~cengel/IMF/HongSteinJF1999.pdf; 43 pages;
+  full text reviewed: yes.
 - **Finding:** In the model, gradual private-information diffusion creates
   underreaction; momentum traders exploit it and can eventually produce
   overreaction, especially where information diffuses slowly.
@@ -144,8 +144,8 @@ pagination.
 
 - **Authors/year/venue:** Robert J. Shiller, 1981, *American Economic Review*
   71(3).
-- **Source:** https://www.nber.org/papers/w0456.pdf; 40 pages; full text reviewed:
-  yes.
+- **Source:** https://www.nber.org/papers/w0456.pdf; 40 pages;
+  full text reviewed: yes.
 - **Finding:** Detrended aggregate U.S. stock-price movements were much larger
   than could be reconciled with subsequently observed real dividends under the
   paper's simple efficient-markets benchmark.

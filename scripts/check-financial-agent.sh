@@ -131,6 +131,27 @@ else
   fi
 fi
 
+behavior_manifest='research/market-behavior/papers/manifest.md'
+if [ ! -f "$behavior_manifest" ]; then
+  fail 'market-behavior paper manifest is missing'
+else
+  behavior_count="$(grep -Ec '^## B[0-9]+:' "$behavior_manifest" || true)"
+  behavior_sources="$(grep -Ec '^- \*\*Source:\*\* https://' "$behavior_manifest" || true)"
+  behavior_reviews="$(grep -Ec 'full text reviewed: yes' "$behavior_manifest" || true)"
+  if [ "$behavior_count" -lt 10 ] || [ "$behavior_sources" -lt 10 ] ||
+     [ "$behavior_reviews" -lt 10 ]; then
+    fail "market-behavior research is incomplete: ${behavior_count} papers, ${behavior_sources} sources, ${behavior_reviews} reviews"
+  else
+    pass "market-behavior research has ${behavior_count} fully sourced and reviewed papers"
+  fi
+fi
+
+if python3 scripts/check-symbol-research.py; then
+  pass 'symbol research workflow integrity'
+else
+  fail 'symbol research workflow integrity check failed'
+fi
+
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do
   if grep -Fq "$phrase" AGENTS.md; then
     pass "core guardrail is present: ${phrase}"

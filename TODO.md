@@ -56,7 +56,7 @@ temporary notes.
       then update `AGENTS.md`, `SYMBOLS.md`, and skill routing.
 - [x] Stage 2: validate both skills, templates, links, horizons, probability
       controls, and leverage safeguards; run the stage gate and commit.
-- [ ] Stage 3: extend integrity checks and add representative regression fixtures
+- [x] Stage 3: extend integrity checks and add representative regression fixtures
       for stale prices, missing news, ambiguous aliases, probability arithmetic,
       narrative-only psychology, and 5x downside.
 - [ ] Stage 3: update durable memory, run syntax/regression/skill/final gates,

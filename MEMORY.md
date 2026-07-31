@@ -25,7 +25,8 @@ secrets, or copied research here.
 - Financial capabilities are evidence verification, company fundamentals,
   valuation and forecasting, macroeconomics, news catalysts, portfolio risk,
   trade-execution planning, investment-thesis synthesis, broker-suitability
-  gating, and financial-agent evaluation.
+  gating, financial-agent evaluation, evidence-bounded market behavior, and a
+  full-universe symbol-research workflow.
 - The research basis is tracked under `research/financial-analyst-agent/`: 41
   fully reviewed papers (10 trading, 10 company analysis, 10 economics, and 11
   news) plus current professional and regulatory primary sources as of
@@ -33,6 +34,21 @@ secrets, or copied research here.
 - Rules and duties vary by jurisdiction, capacity, client, product, and facts.
   Live work retrieves current primary rules and escalates legal or compliance
   conclusions to qualified reviewers.
+- `SYMBOLS.md` is the active-universe source of truth. The exact user request
+  `do symbols research` triggers current online price and news research for
+  every active row, with no silent omissions.
+- Durable symbol memory lives under `research/symbols/<SYMBOL>/`: `LATEST.md`,
+  append-only `DECISIONS.md`, and immutable `history/<UTC-batch-id>.md`
+  snapshots. Root `REPORT.md` is the cross-symbol current summary.
+- Standard symbol horizons are 1 trading day, 2 weeks, 1 month, and 2 months.
+  Each uses an explicit unlevered flat band and either up/flat/down
+  probabilities totaling 100% or `insufficient evidence`. Reports use USD and
+  separate unlevered loss from approximate 5x gross exposure before costs,
+  margin calls, gaps, and liquidation.
+- Behavioral analysis is restricted to observable, participant- and
+  horizon-specific evidence with alternatives and falsifiers. Its 11-paper
+  research basis, including institutional-herding counterevidence, is tracked
+  under `research/market-behavior/` as of 2026-07-31.
 
 ## Development Workflow
 
@@ -45,4 +61,5 @@ secrets, or copied research here.
   into `dev`, and checked again. Publishing to `main` or a remote requires the
   user's explicit instruction.
 - `scripts/check-financial-agent.sh` is the repository integrity check for skill
-  inventory, metadata, stale policy, and research-lane counts.
+  inventory, metadata, stale policy, research manifests, active-symbol memory,
+  report coverage, probability arithmetic, and adverse fixtures.
