@@ -1,4 +1,0 @@
-interface:
-  display_name: "C++ Architecture Review"
-  short_description: "Review C++ architecture and layering."
-  default_prompt: "Use this skill for architecture reviews, library boundary design, layering checks, public API review, and duplication audits."

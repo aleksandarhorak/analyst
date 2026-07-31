@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check Broker Suitability"
+  short_description: "Gate recommendations on client fit, costs, and conflicts"
+  default_prompt: "Use $check-broker-suitability to review client fit, alternatives, costs, conflicts, and missing compliance facts."

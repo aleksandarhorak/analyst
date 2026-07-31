@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Financial Evidence"
+  short_description: "Build point-in-time source ledgers for financial claims"
+  default_prompt: "Use $verify-financial-evidence to verify these claims and produce an auditable point-in-time evidence ledger."

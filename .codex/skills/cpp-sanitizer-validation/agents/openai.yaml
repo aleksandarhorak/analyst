@@ -1,4 +1,0 @@
-interface:
-  display_name: "C++ Sanitizer Validation"
-  short_description: "Validate C++ with sanitizers."
-  default_prompt: "Use $cpp-sanitizer-validation to choose and run the right sanitizer checks for this C++ change."

@@ -1,124 +1,85 @@
 ---
 name: technical-research
-description: Evidence-driven technical research for choosing technologies, libraries, algorithms, standards, papers, public benchmarks, documentation, and implementation approaches. Use when Codex must look online, compare current options, read papers or PDFs, evaluate upstream library documentation, inspect public benchmarks, or make a best-choice recommendation before planning a feature, dependency, architecture, or performance-sensitive solution.
+description: Conduct evidence-driven research using current primary sources, official standards, papers, datasets, documentation, and reproducible benchmarks. Use when a financial or agent-development decision depends on online research, competing methods, current rules, source selection, papers or PDFs, data quality, or an explicit best-choice recommendation.
 ---
 
 # Technical Research
 
 ## Purpose
 
-Use this skill before planning or implementation when the answer depends on
-external evidence, current technology, papers, documentation, public benchmark
-results, or tradeoffs between multiple viable options.
-
-The output is a research dossier under `research/<topic-slug>/` and a clear
-decision that another agent can use without repeating the research.
+Use this skill before planning or implementation when a decision depends on
+external evidence. Produce an auditable dossier under `research/<topic-slug>/`
+and a clear decision that can be consumed without repeating the research.
 
 ## Research Directory
 
-Create or update this structure:
-
 ```text
-research/
-  <topic-slug>/
-    README.md
-    decision.md
-    sources.md
-    papers/
-      manifest.md
-      downloaded/
+research/<topic-slug>/
+  README.md
+  decision.md
+  sources.md
+  papers/
+    manifest.md
+    downloaded/
 ```
 
-Use a short lowercase topic slug. Keep downloaded papers and PDFs in
-`research/<topic-slug>/papers/downloaded/`. Read every downloaded PDF completely
-before finalizing the decision.
+Keep locally reviewed PDFs in `papers/downloaded/` and ignore them when license
+or repository size makes redistribution inappropriate. Stable links and review
+notes remain tracked.
 
 ## Source Priority
 
-Prefer sources in this order:
+Choose primary sources suited to the question:
 
-1. Official specifications, standards, reference manuals, and project
-   documentation.
-2. Upstream repository documentation, release notes, examples, build files,
-   issues, and maintainer guidance.
-3. Published papers, preprints, technical reports, conference material, and
-   author-maintained project pages.
-4. Reproducible public benchmarks, benchmark repositories, and benchmark
-   methodology writeups.
-5. Reputable engineering blogs, migration reports, and production postmortems.
-6. Forums, social threads, Q&A sites, and comments as low-confidence signals.
+1. Regulators, exchanges, central banks, statistical agencies, courts,
+   standards bodies, filings, issuer releases, and official documentation.
+2. Original datasets with methodology, vintages, and licensing terms.
+3. Peer-reviewed papers, working papers, technical reports, and author copies.
+4. Reproducible benchmarks and repositories with disclosed methodology.
+5. Direct reputable reporting, professional analysis, and implementation
+   postmortems.
+6. Aggregators, blogs, forums, social posts, and comments as lower-confidence
+   leads requiring corroboration.
 
-Prefer primary sources over summaries. When sources conflict, keep the conflict
-visible and explain which source is more authoritative for this repository's
-decision.
-
-## Subagent Research
-
-Use subagents when the research splits into independent lanes and the available
-tools support them. Assign narrow prompts and require evidence, links, dates,
-and confidence levels.
-
-Useful lanes:
-
-- Official docs and standards.
-- Papers and PDFs.
-- Library ecosystem, maintenance, API stability, and build integration.
-- Public benchmarks and reproducibility.
-- Security, reliability, portability, and operational risks.
-- Competing options and rejected alternatives.
-
-The main agent owns the final synthesis. Do not accept a subagent conclusion
-without checking its cited evidence.
+Prefer current primary guidance. Preserve publication, event, access, version,
+revision, and as-of dates. When sources conflict, show the conflict and explain
+which evidence is most authoritative for the decision.
 
 ## Research Procedure
 
-1. Restate the problem, constraints, required platform, and decision criteria.
-2. Search official documentation and upstream repositories first.
-3. Search for papers, technical reports, and implementation notes.
-4. Download relevant PDFs into the research folder and read each one completely.
-5. Search for public benchmarks and inspect methodology before trusting results.
-6. Search blogs and forums only after primary sources have been checked.
-7. Compare options with a decision matrix tied to repository constraints.
-8. Record all sources with access dates, URLs, versions, commits, or paper
-   metadata.
-9. Write `decision.md` with the selected choice, rationale, rejected
-   alternatives, risks, and verification plan.
-10. Stop research when additional sources are unlikely to change the decision,
-    or when the remaining uncertainty is clearly documented.
+1. Restate the problem, non-goals, jurisdiction or platform, decision cutoff,
+   constraints, and criteria.
+2. Search primary sources and original data first.
+3. Search papers, reports, competing methods, and adverse evidence.
+4. Download relevant documents and read every relied-on document completely;
+   do not equate an abstract or snippet with a full review.
+5. Inspect data construction, sample, vintages, survivorship, revisions,
+   conflicts, benchmark design, costs, and reproducibility.
+6. Use subagents only when explicit instructions allow it and lanes are truly
+   independent. Require links, dates, methods, limitations, and confidence.
+7. Compare options against the stated decision criteria. Include a simple
+   baseline and rejected alternatives.
+8. Record source metadata, exact claims used, confidence, contradictions, and
+   unresolved gaps.
+9. Write `decision.md` with the selected choice, rationale, risks,
+   implementation implications, and verification plan.
+10. Stop when more evidence is unlikely to change the decision or remaining
+    uncertainty is explicit.
 
 ## Required Files
 
-`README.md`:
+`README.md` records problem, scope, non-goals, status, and links.
 
-- Problem summary.
-- Scope and non-goals.
-- Research status.
-- Pointers to the decision and source files.
+`sources.md` records title, URL or local path, access date, publication/version,
+claims used, and confidence.
 
-`sources.md`:
+`papers/manifest.md` records title, authors, year, venue, source, local path when
+applicable, methods, findings, limitations, and confirmation of full review.
 
-- Source title.
-- URL or local file path.
-- Access date.
-- Version, commit, publication venue, or publication date when available.
-- Key claims used in the decision.
-- Confidence level: high, medium, or low.
-
-`papers/manifest.md`:
-
-- Paper title.
-- Authors.
-- Year or publication date.
-- Source URL.
-- Local PDF path when downloaded.
-- Key methods, findings, and limitations.
-- Confirmation that the PDF was read completely.
-
-`decision.md`:
+`decision.md` uses:
 
 ```markdown
 # Decision: <topic>
-
 ## Problem
 ## Constraints
 ## Decision Criteria
@@ -136,24 +97,18 @@ without checking its cited evidence.
 
 ## Decision Rules
 
-- Do not choose a dependency, architecture, algorithm, or technology because it
-  is popular. Tie the choice to evidence and repository constraints.
-- Prefer current official guidance over old tutorials.
-- Prefer reproducible benchmarks over headline numbers.
-- Do not finalize a decision while any downloaded PDF remains unread, partially
-  read, or only skimmed.
-- Prefer simpler standard-library or local solutions when evidence does not
-  justify a new dependency.
-- For C++ dependencies, pass dependency decisions to
-  `skills/cpp-dependency-submodules/SKILL.md` after research.
-- For architecture decisions, pass structure decisions to
-  `skills/cpp-architecture-review/SKILL.md` after research.
-- For hot-path or parallel performance decisions, pass validation needs to
-  `skills/cpp-performance-benchmark/SKILL.md` and
-  `skills/tbb-concurrency/SKILL.md` after research.
+- Do not choose a method, dependency, data source, strategy, or policy because
+  it is popular. Tie it to evidence and constraints.
+- Do not generalize historical anomalies without point-in-time data,
+  out-of-sample testing, realistic costs, capacity, and regime limitations.
+- Do not finalize while a relied-on document remains unread or decisive source
+  contradictions remain hidden.
+- Legal, regulatory, tax, and product conclusions require current primary
+  sources and qualified review for actual deployment.
+- State when no option has enough evidence.
 
 ## Handoff
 
-When research is complete, hand off `research/<topic-slug>/decision.md` to
-`skills/implementation-planning/SKILL.md`. Planning should consume the decision
-instead of restarting the research unless gaps or contradictions remain.
+Hand the completed `decision.md` to `implementation-planning` for repository
+changes. For financial analysis, route the verified evidence to the relevant
+finance skill and preserve the source ledger.
