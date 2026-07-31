@@ -39,7 +39,7 @@ also reviewed.
 - [Source ledger](sources.md)
 - [Paper manifest](papers/manifest.md)
 
-Full-text PDFs used during review are kept locally under `papers/downloaded/`
-and ignored by Git to avoid redistributing copyrighted works or bloating the
-repository. Stable source links and complete review notes remain in the
-manifest.
+Full-text documents were reviewed from the stable links recorded in the
+manifest. `papers/downloaded/` is reserved for optional local copies and ignored
+by Git to avoid redistributing copyrighted works or bloating the repository;
+complete review notes remain tracked.
