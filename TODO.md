@@ -20,7 +20,7 @@ temporary notes.
       implications.
 - [x] Replace C++/CMake/TBB operating policy and skills with a compact
       finance-first policy and bounded, nonduplicative finance skills.
-- [ ] Preserve and adapt technical research, implementation planning, tested Git
+- [x] Preserve and adapt technical research, implementation planning, tested Git
       delivery, CI, branch checks, and repository quality gates so the agent can
       continue improving safely.
 - [x] Encode professional controls for source provenance, point-in-time data,
@@ -51,11 +51,11 @@ temporary notes.
       analysis, brokerage, risk, safety, workflow, and Git standards.
 - [x] Stage 2: create and validate the ten selected finance skills and adapt the
       retained technical-research and implementation-planning skills.
-- [ ] Stage 2: run all skill validators and the stage quality gate, inspect the
+- [x] Stage 2: run all skill validators and the stage quality gate, inspect the
       staged diff, and commit the capability migration.
-- [ ] Stage 3: replace dependency-specific checks and ignore rules with
+- [x] Stage 3: replace dependency-specific checks and ignore rules with
       financial-agent integrity and generic project-development checks.
-- [ ] Stage 3: update durable project memory, verify paper/skill inventory,
+- [x] Stage 3: update durable project memory, verify paper/skill inventory,
       validate shell scripts, run regression checks, and complete a security and
       compliance review.
 - [ ] Reset `TODO.md`, run `git diff --check` and the full quality gate, commit

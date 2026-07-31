@@ -1,66 +1,35 @@
-# CMake and build directories
-build/
-build*/
-/install/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-CTestTestfile.cmake
-Testing/
-install_manifest.txt
+# Local environments, secrets, and caches
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
 
-# Generated compile databases and dependency files
-compile_commands.json
-*.d
+# Root-generated outputs
+/build/
+/dist/
+/out/
+/generated/
+/artifacts/
+/coverage/
+/tmp/
 
-# C++ build outputs
-*.o
-*.obj
-*.lo
-*.a
-*.lib
-*.so
-*.so.*
-*.dylib
-*.dll
-*.exe
-*.out
-*.app
-
-# Coverage and profiling
-*.gcda
-*.gcno
-*.gcov
-coverage/
-htmlcov/
-*.profraw
-*.profdata
-
-# Sanitizer and runtime logs
-asan.log*
-tsan.log*
-ubsan.log*
-lsan.log*
+# Logs and temporary files
 *.log
+*.tmp
+*.bak
 
-# Package and generated artifacts
-*.tar
-*.tar.gz
-*.tgz
-*.zip
-*.7z
-dist/
-out/
-generated/
-
-# Editors and IDEs
+# Editors and operating systems
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS files
 .DS_Store
 Thumbs.db
