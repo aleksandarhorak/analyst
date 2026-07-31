@@ -1,0 +1,4 @@
+interface:
+  display_name: "Acquire Point-in-Time Financial Data"
+  short_description: "Build auditable point-in-time evidence packets"
+  default_prompt: "Use $acquire-point-in-time-financial-data to acquire verified point-in-time inputs for this analysis."

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "2025-07-29-088691",
+    "market_and_exchange_names": "COFFEE C - ICE FUTURES U.S.",
+    "report_date_as_yyyy_mm_dd": "2025-07-29T00:00:00.000",
+    "cftc_contract_market_code": "083731",
+    "commodity_name": "COFFEE",
+    "open_interest_all": "123456",
+    "m_money_positions_long_all": "45678"
+  },
+  {
+    "id": "other-contract",
+    "market_and_exchange_names": "OTHER",
+    "report_date_as_yyyy_mm_dd": "2025-07-29T00:00:00.000",
+    "cftc_contract_market_code": "000000",
+    "commodity_name": "OTHER",
+    "open_interest_all": "99"
+  }
+]

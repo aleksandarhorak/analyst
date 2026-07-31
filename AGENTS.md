@@ -28,6 +28,8 @@ planning or acting.
 - `implementation-planning`: convert a researched decision or multi-stage
   request into an executable repository plan.
 - `git-tested-delivery`: every task that edits repository files.
+- `acquire-point-in-time-financial-data`: normalize official or authorized
+  provider data into versioned evidence packets before analysis.
 - `verify-financial-evidence`: point-in-time source validation and evidence
   ledgers.
 - `analyze-company-fundamentals`: business quality, accounting, capital
@@ -94,6 +96,10 @@ explicit as-of timestamp.
 - Browse when facts may have changed. Prefer filings, issuer releases,
   exchanges, regulators, central banks, statistical agencies, courts, and
   original research over summaries.
+- Use `acquire-point-in-time-financial-data` for repeatable SEC, ALFRED, CFTC,
+  price, or news acquisition. Validate `evidence-packet-v1` before relying on
+  it; a packet with failed quality, ambiguous identity, after-cutoff data,
+  partial output, or secret-bearing provenance is unusable.
 - Preserve publication time, event time, market-session context, access time,
   and revision or data-vintage information. Do not use knowledge that was not
   available at the decision time.

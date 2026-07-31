@@ -14,6 +14,14 @@
 
 Classifications: reported fact, derived fact, estimate, scenario, or opinion.
 
+## Evidence Packets
+
+| Ledger ID | Packet ID | Raw SHA-256 | Adapter/version | Instrument ID | Quality | Source locator |
+| --- | --- | --- | --- | --- | --- | --- |
+
+Recompute the packet ID before use. Map every packet observation to one ledger
+claim; record but do not merge contradictory observations.
+
 ## Reconciliation
 
 - Formula and inputs:
@@ -31,6 +39,8 @@ Classifications: reported fact, derived fact, estimate, scenario, or opinion.
 
 - The source post-dates the decision cutoff or lacks a release time.
 - A normalized vendor field cannot be traced to its original record.
+- An evidence packet hash fails, has `quality.status=fail`, is partial, contains
+  a credential, or identifies a different instrument.
 - A revised series is substituted for the first release.
 - Units, signs, currencies, periods, or identifiers do not match.
 - A promotional, anonymous, or synthetic claim lacks corroboration.

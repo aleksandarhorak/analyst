@@ -22,6 +22,7 @@ required_skills=(
   technical-research
   implementation-planning
   git-tested-delivery
+  acquire-point-in-time-financial-data
   verify-financial-evidence
   analyze-company-fundamentals
   value-company-and-forecast
@@ -150,6 +151,12 @@ if python3 scripts/check-symbol-research.py; then
   pass 'symbol research workflow integrity'
 else
   fail 'symbol research workflow integrity check failed'
+fi
+
+if python3 scripts/test-financial-data.py; then
+  pass 'point-in-time financial data adapter regressions'
+else
+  fail 'point-in-time financial data adapter regressions failed'
 fi
 
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do

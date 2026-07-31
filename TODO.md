@@ -12,7 +12,7 @@ temporary notes.
   operational foundation.
 - [x] Create `feature/analyst-operational-foundation` from clean local `dev`.
 - [x] Complete current primary-source research and record the selected design.
-- [ ] Add point-in-time financial-data acquisition contracts and adapters.
+- [x] Add point-in-time financial-data acquisition contracts and adapters.
 - [ ] Add an executable financial-agent evaluation runner and regression cases.
 - [ ] Add forecast registration, outcome resolution, and calibration scoring.
 - [ ] Enforce immutable symbol-research history and versioned migrations.
