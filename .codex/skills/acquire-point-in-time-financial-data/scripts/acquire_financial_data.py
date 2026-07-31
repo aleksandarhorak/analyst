@@ -526,8 +526,10 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
         except (OSError, subprocess.TimeoutExpired) as error:
             raise AcquisitionError(f"provider process failed: {error}") from error
         if completed.returncode != 0:
-            diagnostic = completed.stderr.decode("utf-8", errors="replace")[:500]
-            raise AcquisitionError(f"provider exited {completed.returncode}: {diagnostic}")
+            stderr_hash = sha256_bytes(completed.stderr)
+            raise AcquisitionError(
+                f"provider exited {completed.returncode}; stderr_sha256={stderr_hash}"
+            )
         if len(completed.stdout) > MAX_RESPONSE_BYTES:
             raise AcquisitionError(f"provider response exceeds {MAX_RESPONSE_BYTES} bytes")
         raw = completed.stdout

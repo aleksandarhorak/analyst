@@ -13,8 +13,8 @@ temporary notes.
 - [x] Create `feature/analyst-operational-foundation` from clean local `dev`.
 - [x] Complete current primary-source research and record the selected design.
 - [x] Add point-in-time financial-data acquisition contracts and adapters.
-- [ ] Add an executable financial-agent evaluation runner and regression cases.
-- [ ] Add forecast registration, outcome resolution, and calibration scoring.
+- [x] Add an executable financial-agent evaluation runner and regression cases.
+- [x] Add forecast registration, outcome resolution, and calibration scoring.
 - [ ] Enforce immutable symbol-research history and versioned migrations.
 - [ ] Add commodity/futures analysis and client-data governance skills.
 - [ ] Integrate the new controls into existing skills, templates, and policy.

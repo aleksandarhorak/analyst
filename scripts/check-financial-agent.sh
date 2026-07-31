@@ -26,6 +26,7 @@ required_skills=(
   verify-financial-evidence
   analyze-company-fundamentals
   value-company-and-forecast
+  calibrate-financial-forecasts
   analyze-macroeconomy
   analyze-news-catalysts
   analyze-market-behavior
@@ -157,6 +158,18 @@ if python3 scripts/test-financial-data.py; then
   pass 'point-in-time financial data adapter regressions'
 else
   fail 'point-in-time financial data adapter regressions failed'
+fi
+
+if python3 scripts/test-financial-evals.py; then
+  pass 'executable financial-agent evaluation regressions'
+else
+  fail 'executable financial-agent evaluation regressions failed'
+fi
+
+if python3 scripts/test-forecast-calibration.py; then
+  pass 'forecast ledger and calibration regressions'
+else
+  fail 'forecast ledger and calibration regressions failed'
 fi
 
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do

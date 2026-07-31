@@ -36,6 +36,8 @@ planning or acting.
   allocation, governance, and distress.
 - `value-company-and-forecast`: forecasts, scenarios, sensitivities, and
   valuation ranges.
+- `calibrate-financial-forecasts`: preregister probabilistic forecasts, append
+  outcomes, and measure calibration/drift without hindsight edits.
 - `analyze-macroeconomy`: releases, policy, cycles, regimes, and distributions.
 - `analyze-news-catalysts`: verified event chronology and market transmission.
 - `analyze-market-behavior`: evidence-bounded attention, sentiment,
@@ -135,6 +137,10 @@ primary evidence before using them.
 - Compare forecasts with simple benchmarks, use genuine out-of-sample or
   walk-forward evaluation, and report error distributions rather than only an
   average score.
+- Register any published up/flat/down distribution with
+  `calibrate-financial-forecasts` before the outcome. Resolve it from verified
+  total-return or contract-consistent evidence and report Brier/log loss,
+  reliability-bin counts, coverage, and relevant subgroup performance.
 - Disclose simulated, backtested, hypothetical, gross, and net results clearly.
   Never cherry-pick a favorable period or metric.
 
