@@ -1,5 +1,7 @@
 # Symbol Research Report
 
+<!-- analyst-template: report-v2 -->
+
 > Initialized from `SYMBOLS.md`; no live batch has been completed. `—` means
 > unavailable or insufficient evidence, not zero.
 
@@ -13,6 +15,7 @@
 - Leverage: unlevered plus 5x gross linear exposure before financing, spread,
   slippage, gaps, margin calls, and liquidation
 - Capacity: Impersonal research; no order authority
+- Evidence packets / forecast registrations: Not researched
 
 ## Universe And Current Evidence
 

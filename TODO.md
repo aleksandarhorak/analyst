@@ -15,7 +15,7 @@ temporary notes.
 - [x] Add point-in-time financial-data acquisition contracts and adapters.
 - [x] Add an executable financial-agent evaluation runner and regression cases.
 - [x] Add forecast registration, outcome resolution, and calibration scoring.
-- [ ] Enforce immutable symbol-research history and versioned migrations.
+- [x] Enforce immutable symbol-research history and versioned migrations.
 - [ ] Add commodity/futures analysis and client-data governance skills.
 - [ ] Integrate the new controls into existing skills, templates, and policy.
 - [ ] Run focused tests, all skill validators, and the full quality gate.

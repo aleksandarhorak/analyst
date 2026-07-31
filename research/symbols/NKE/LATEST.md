@@ -1,5 +1,6 @@
 # NKE — Latest Research
 
+<!-- analyst-template: latest-v2 -->
 > Placeholder created from `SYMBOLS.md`; no live research has been completed.
 
 ## Instrument
@@ -58,3 +59,9 @@ percentages are supplied.
 - Thesis and strongest contrary case: —
 - Invalidation and next review: —
 - Immutable snapshot: —
+
+## Data Lineage
+
+- Evidence packet IDs: —
+- Registered forecast IDs: —
+- Template version: 2

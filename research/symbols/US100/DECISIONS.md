@@ -1,5 +1,6 @@
 # US100 — Decision History
 
+<!-- analyst-template: decisions-v2 -->
 This is an append-only, point-in-time decision index. Preserve old views and
 link corrections rather than rewriting history.
 

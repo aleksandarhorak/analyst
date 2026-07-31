@@ -154,6 +154,24 @@ else
   fail 'symbol research workflow integrity check failed'
 fi
 
+if python3 .codex/skills/research-symbol-watchlist/scripts/migrate_symbol_templates.py --check; then
+  pass 'symbol template versions are current'
+else
+  fail 'symbol template migration check failed'
+fi
+
+if python3 .codex/skills/research-symbol-watchlist/scripts/symbol_research_history.py verify --repo-root .; then
+  pass 'symbol history manifests and hashes'
+else
+  fail 'symbol history integrity failed'
+fi
+
+if python3 scripts/test-symbol-history.py; then
+  pass 'symbol history and migration regressions'
+else
+  fail 'symbol history and migration regressions failed'
+fi
+
 if python3 scripts/test-financial-data.py; then
   pass 'point-in-time financial data adapter regressions'
 else
