@@ -1,66 +1,65 @@
 # Project Memory
 
 Durable project facts only. Keep this file short, factual, and current. Do not
-store chat notes, temporary failures, stale TODOs, guesses, or long copied
-documentation here.
+store chat notes, temporary failures, stale TODOs, guesses, client information,
+secrets, or copied research here.
 
-## Active Facts
+## Mission And Boundaries
 
-- This repository is a reusable Codex C++23/TBB agent template.
-- `AGENTS.md` is the always-loaded project guidance and skill router.
-- Detailed reusable workflows live under `skills/<skill-name>/SKILL.md`.
-- `scripts/install-agent-setup.sh` is Codex-only and installs every repo-local
-  skill into the target project's `.codex/skills` directory.
-- Its `--update` profile replaces template-managed setup in an existing Git
-  project while preserving branch setup, skipping Linux tool checks, and
-  installing the quality-gate hook; combine it with `--dry-run` to preview.
-- The installer force-adds `.codex/skills` to a new project's initial commit so
-  global Git ignore patterns cannot silently omit matching skill names.
-
-## Build Notes
-
-- Reuse stable `build_debug` and `build_release` directories; use additional
-  stable build trees only for incompatible toolchain, sanitizer, ABI, or
-  compile-affecting variants.
-- Root CMake projects default top-level installation to the ignored
-  `<project-root>/install` directory while preserving explicit user overrides.
-- Shared build and environment configurations live in committed
-  `CMakePresets.json`; project workflows do not create or rely on
-  `CMakeUserPresets.json`.
-- Keep generated build and install artifacts out of Git.
-- Bootstrap checks Linux C++ tool availability by default; package installation
-  is explicit with `--install-linux-tools`.
-- `scripts/agent-quality-gate.sh` is the shared local hook and CI gate for
-  branch, whitespace, TODO, generated artifact, and dependency-hygiene checks.
-
-## Dependency Notes
-
-- Important C++ dependencies should be vendored as pinned GitHub submodules
-  under `external/<name>`.
-- Do not ask users to install missing central dependencies; vendor them or pick
-  another solution.
-- Resolve direct and transitive dependency closure before CMake integration, and
-  build/install dependencies only through the root CMake project.
-- Project targets should drive external builds: link precise dependency targets,
-  prefer `EXCLUDE_FROM_ALL` where suitable, and install only intentionally used
-  artifacts from root install rules.
+- This repository defines an evidence-led financial analyst and broker-support
+  agent; it does not grant professional licensure, fiduciary status, legal or
+  tax authority, account access, or autonomous order authority.
+- The agent separates thesis, portfolio fit, personalized suitability, and
+  execution analysis. It abstains when decisive evidence or material client
+  facts are missing.
+- Decision-ready outputs use point-in-time primary evidence, reconcile material
+  numbers, distinguish facts from estimates and opinions, show scenario ranges,
+  and expose costs, downside, conflicts, disconfirmers, and invalidation.
 
 ## Architecture Decisions
 
-- Keep `AGENTS.md` compact and move detailed repeatable workflows into skills.
-- Keep project memory clean; add only facts that future agents should rely on.
-- Full-workflow implementation tasks should plan in `TODO.md`, update it during
-  execution, and keep all verified stage commits for one cohesive deliverable on
-  the same `fix/*` or `feature/*` branch.
-- Every file-changing task uses a work branch; direct task edits and commits on
-  `dev` are prohibited. Passing work is tested as a prepared merge, merged
-  automatically into `dev`, and verified again without waiting for approval.
-- Long plans merge each independently deliverable phase, then continue from the
-  updated `dev` on a new work branch. Dependent stages remain together until
-  their cohesive fix or feature is complete.
-- Before the final work-branch gate and automatic merge, confirm `TODO.md` is
-  reset to the empty template or contains only a completed summary.
-- Stage commits use the shared quality gate in `--stage` mode. Final
-  work-branch and merged `dev` states use the full gate. The optional pre-commit
-  hook blocks direct `dev` task commits while allowing tested merge commits; CI
-  runs the gate in `--ci` mode.
+- `AGENTS.md` owns compact non-negotiable conduct and repository workflow.
+  Detailed repeatable procedures live in `.codex/skills/<skill-name>/`.
+- Retained development capabilities are `technical-research`,
+  `implementation-planning`, and `git-tested-delivery`.
+- Financial capabilities are evidence verification, company fundamentals,
+  valuation and forecasting, macroeconomics, news catalysts, portfolio risk,
+  trade-execution planning, investment-thesis synthesis, broker-suitability
+  gating, financial-agent evaluation, evidence-bounded market behavior, and a
+  full-universe symbol-research workflow.
+- The research basis is tracked under `research/financial-analyst-agent/`: 41
+  fully reviewed papers (10 trading, 10 company analysis, 10 economics, and 11
+  news) plus current professional and regulatory primary sources as of
+  2026-07-31. Local full-text downloads remain ignored.
+- Rules and duties vary by jurisdiction, capacity, client, product, and facts.
+  Live work retrieves current primary rules and escalates legal or compliance
+  conclusions to qualified reviewers.
+- `SYMBOLS.md` is the active-universe source of truth. The exact user request
+  `do symbols research` triggers current online price and news research for
+  every active row, with no silent omissions.
+- Durable symbol memory lives under `research/symbols/<SYMBOL>/`: `LATEST.md`,
+  append-only `DECISIONS.md`, and immutable `history/<UTC-batch-id>.md`
+  snapshots. Root `REPORT.md` is the cross-symbol current summary.
+- Standard symbol horizons are 1 trading day, 2 weeks, 1 month, and 2 months.
+  Each uses an explicit unlevered flat band and either up/flat/down
+  probabilities totaling 100% or `insufficient evidence`. Reports use USD and
+  separate unlevered loss from approximate 5x gross exposure before costs,
+  margin calls, gaps, and liquidation.
+- Behavioral analysis is restricted to observable, participant- and
+  horizon-specific evidence with alternatives and falsifiers. Its 11-paper
+  research basis, including institutional-herding counterevidence, is tracked
+  under `research/market-behavior/` as of 2026-07-31.
+
+## Development Workflow
+
+- Full-workflow changes plan in `TODO.md`; completed work resets it before the
+  final gate. Durable facts belong here only after they are established.
+- Every file-changing task uses one matching `fix/*` or `feature/*` branch.
+  Stage commits run `scripts/agent-quality-gate.sh --stage`; final work-branch,
+  prepared-merge, and clean merged `dev` states run the full gate.
+- Passing work is tested as a prepared non-fast-forward merge, merged locally
+  into `dev`, and checked again. Publishing to `main` or a remote requires the
+  user's explicit instruction.
+- `scripts/check-financial-agent.sh` is the repository integrity check for skill
+  inventory, metadata, stale policy, research manifests, active-symbol memory,
+  report coverage, probability arithmetic, and adverse fixtures.

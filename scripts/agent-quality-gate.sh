@@ -5,7 +5,7 @@ usage() {
   printf '%s\n' \
     'Usage: scripts/agent-quality-gate.sh [--ci] [--stage]' \
     '' \
-    'Runs agent workflow and dependency hygiene checks before commits and merges.' \
+    'Runs agent workflow and financial-agent integrity checks.' \
     '' \
     'Options:' \
     '  --ci      Skip local branch enforcement for CI on main or pull requests.' \
@@ -58,7 +58,7 @@ if [ "$ci_mode" -eq 0 ]; then
   if scripts/check-agent-branch.sh --allow-dev "$branch" >/dev/null 2>&1; then
     pass "current branch is allowed: ${branch}"
   else
-    fail "current branch is '$branch', expected dev, feature/<slug>, or fix/<slug>"
+    fail "current branch is '${branch}', expected dev, feature/<slug>, or fix/<slug>"
   fi
 else
   pass 'CI mode skips local branch enforcement'
@@ -85,7 +85,7 @@ if [ -n "$status_output" ]; then
     worktree_status="${line:1:1}"
     if [ "$index_status" = "?" ] && [ "$worktree_status" = "?" ]; then
       dirty_details="${dirty_details}${line}"$'\n'
-    elif [ "$worktree_status" != " " ]; then
+    elif [ "$worktree_status" != ' ' ]; then
       dirty_details="${dirty_details}${line}"$'\n'
     fi
   done <<< "$status_output"
@@ -127,31 +127,28 @@ tracked_generated=''
 while IFS= read -r path; do
   [ -n "$path" ] || continue
   first_component="${path%%/*}"
-  if [ "$path" = "$first_component" ]; then
-    case "$path" in
-      CMakeCache.txt|cmake_install.cmake|compile_commands.json|install_manifest.txt)
-        tracked_generated="${tracked_generated}${path}"$'\n'
-        ;;
-    esac
-  else
-    case "$first_component" in
-      build*|install*|cmake-build-*|CMakeFiles|Testing|coverage|htmlcov|dist|out|generated)
-        tracked_generated="${tracked_generated}${path}"$'\n'
-        ;;
-    esac
-  fi
+  case "$path" in
+    *.pyc|*.pyo|*/__pycache__/*|*/.pytest_cache/*|*/.mypy_cache/*|*/.ruff_cache/*)
+      tracked_generated="${tracked_generated}${path}"$'\n'
+      ;;
+  esac
+  case "$first_component" in
+    build|dist|out|generated|artifacts|coverage|tmp|.cache|.venv|venv)
+      tracked_generated="${tracked_generated}${path}"$'\n'
+      ;;
+  esac
 done < <(git ls-files)
 
 if [ -n "$tracked_generated" ]; then
-  fail "generated build/install artifacts are tracked: ${tracked_generated//$'\n'/; }"
+  fail "generated or local artifacts are tracked: ${tracked_generated//$'\n'/; }"
 else
-  pass 'no tracked generated build/install artifacts'
+  pass 'no generated or local artifacts are tracked'
 fi
 
-if scripts/check-dependency-hygiene.sh; then
-  pass 'dependency hygiene check'
+if scripts/check-financial-agent.sh; then
+  pass 'financial agent integrity check'
 else
-  fail 'dependency hygiene check'
+  fail 'financial agent integrity check'
 fi
 
 if [ -x scripts/test-agent-branch-policy.sh ]; then
@@ -159,14 +156,6 @@ if [ -x scripts/test-agent-branch-policy.sh ]; then
     pass 'agent branch policy regression test'
   else
     fail 'agent branch policy regression test'
-  fi
-fi
-
-if [ -x scripts/test-install-agent-setup.sh ]; then
-  if scripts/test-install-agent-setup.sh; then
-    pass 'Codex installer regression test'
-  else
-    fail 'Codex installer regression test'
   fi
 fi
 

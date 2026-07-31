@@ -1,0 +1,4 @@
+interface:
+  display_name: "Value Company And Forecast"
+  short_description: "Build scenario forecasts and defensible valuation ranges"
+  default_prompt: "Use $value-company-and-forecast to create scenario forecasts, sensitivities, and a defensible valuation range."

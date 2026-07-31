@@ -1,4 +1,0 @@
-interface:
-  display_name: "C++ Dependency Submodules"
-  short_description: "Vendor C++ dependencies as pinned GitHub submodules."
-  default_prompt: "Use this skill when adding or changing C++ third-party dependencies, submodules, or dependency CMake setup. Map the full direct and transitive dependency closure, add required C/C++ libraries as pinned GitHub submodules, and do not install packages or use system packages, package managers, extracted RPM/DEB/APK files, downloaded archives, /tmp builds, copied install trees, skipped transitive dependencies, or disabled selected features."

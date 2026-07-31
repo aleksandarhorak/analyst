@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Market Behavior"
+  short_description: "Test evidence-based behavioral market mechanisms"
+  default_prompt: "Use $analyze-market-behavior to assess observable market behavior without narrative-only psychology."

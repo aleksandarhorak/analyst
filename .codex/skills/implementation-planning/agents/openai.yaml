@@ -1,4 +1,4 @@
 interface:
   display_name: "Implementation Planning"
-  short_description: "Turn research and feature goals into executable TODO plans."
-  default_prompt: "Use $implementation-planning after research or design input exists to create a staged implementation plan with acceptance criteria, verification steps, TODO.md updates, and commit readiness."
+  short_description: "Turn researched agent changes into executable plans"
+  default_prompt: "Use $implementation-planning to turn this researched agent change into staged TODO work, acceptance criteria, verification, and commit boundaries."

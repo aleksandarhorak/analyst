@@ -19,7 +19,7 @@ When a full-workflow task starts, replace `None` with:
 - [ ] Inspect relevant files and existing patterns.
 - [ ] Plan implementation stages.
 - [ ] Implement and commit each completed, verified stage on the work branch.
-- [ ] Build affected targets.
+- [ ] Run affected validators or builds.
 - [ ] Run focused tests.
 - [ ] Run broader checks when risk requires them.
 - [ ] Update durable memory if new project facts were learned.

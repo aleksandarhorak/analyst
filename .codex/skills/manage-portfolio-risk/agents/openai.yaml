@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Portfolio Risk"
+  short_description: "Size positions and stress portfolio downside and liquidity"
+  default_prompt: "Use $manage-portfolio-risk to assess sizing, concentration, factors, liquidity, and portfolio downside."

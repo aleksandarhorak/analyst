@@ -1,4 +1,0 @@
-interface:
-  display_name: "C++ Build Fix Loop"
-  short_description: "Build and repair C++/CMake changes."
-  default_prompt: "Use this skill after C++ or CMake edits to build, inspect failures, fix, and repeat until clean."

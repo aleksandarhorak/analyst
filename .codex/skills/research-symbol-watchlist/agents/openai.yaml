@@ -1,0 +1,4 @@
+interface:
+  display_name: "Research Symbol Watchlist"
+  short_description: "Research every watchlist symbol and preserve decisions"
+  default_prompt: "Use $research-symbol-watchlist to run current online research for every active symbol and update the durable report."

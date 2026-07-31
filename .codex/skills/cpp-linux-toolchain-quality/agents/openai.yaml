@@ -1,4 +1,0 @@
-interface:
-  display_name: "C++ Linux Toolchain Quality"
-  short_description: "Run Linux C++ quality tools."
-  default_prompt: "Use $cpp-linux-toolchain-quality to choose and run the right Linux C++ quality tools for this change."

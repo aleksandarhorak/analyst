@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Investment Thesis"
+  short_description: "Synthesize evidence into an auditable investment thesis"
+  default_prompt: "Use $build-investment-thesis to synthesize the evidence into scenarios, valuation, catalysts, risks, and invalidation."
