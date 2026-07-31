@@ -36,6 +36,10 @@ planning or acting.
   valuation ranges.
 - `analyze-macroeconomy`: releases, policy, cycles, regimes, and distributions.
 - `analyze-news-catalysts`: verified event chronology and market transmission.
+- `analyze-market-behavior`: evidence-bounded attention, sentiment,
+  reference-point, extrapolation, and participant-response analysis.
+- `research-symbol-watchlist`: full-universe current price/news research,
+  four-horizon probabilities, durable symbol memory, and `REPORT.md`.
 - `plan-trade-execution`: market structure, implementation shortfall, and
   transaction-cost analysis; never order placement.
 - `manage-portfolio-risk`: sizing, concentration, factors, liquidity, stress,
@@ -56,6 +60,13 @@ At the start of recurring market, company, portfolio, or trading analysis, read
 not an automatic buy list or a substitute for current evidence, valuation,
 portfolio fit, suitability, or execution analysis.
 
+When the user says `do symbols research`, read and follow
+`research-symbol-watchlist`. Research every active symbol online, synchronize
+`research/symbols/`, preserve an immutable point-in-time decision snapshot,
+update each `LATEST.md` and append-only `DECISIONS.md`, then replace root
+`REPORT.md` with a complete batch. Missing data or unresolved aliases remain
+visible; they never justify silently omitting a symbol.
+
 - Keep instrument identifiers, names, asset classes, and short descriptions
   current. Resolve platform aliases to an exact exchange-listed security,
   contract, fund, index, or other tradable instrument before using market data.
@@ -65,6 +76,12 @@ portfolio fit, suitability, or execution analysis.
   stated price and horizon; it is not a personalized recommendation.
 - Add symbols when there is a documented research reason. Archive removed
   symbols with the date and reason instead of erasing their history.
+- Keep the four forecast horizons fixed at 1 trading day, 2 weeks, 1 month, and
+  2 months. Define an unlevered flat band and require up/flat/down probabilities
+  to total 100%, or state `insufficient evidence` without invented percentages.
+- Report in USD. When 5x leverage is relevant, separate unlevered outcomes from
+  gross linear leveraged outcomes and disclose financing, spread, slippage,
+  gap, margin-call, and forced-liquidation risk.
 - Record material status changes in the file's change log. Never backfill a
   historical view with information that was unavailable at the recorded time.
 

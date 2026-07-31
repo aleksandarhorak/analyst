@@ -21,18 +21,29 @@ Last universe review: `2026-07-31T23:30:47+01:00`.
 
 ## Daily Maintenance Rules
 
-1. Verify the exact instrument, venue, currency, price timestamp, and relevant
+1. On `do symbols research`, use `research-symbol-watchlist` for every active
+   row and update root `REPORT.md`; no active symbol may be omitted silently.
+2. Verify the exact instrument, venue, currency, price timestamp, and relevant
    corporate actions before analysis.
-2. Use `verify-financial-evidence` before relying on current prices, filings,
+3. Use `verify-financial-evidence` before relying on current prices, filings,
    releases, news, estimates, or macroeconomic data.
-3. Use the relevant company, valuation, macro, news, portfolio, suitability, and
-   execution skills before changing a status.
-4. Record each material decision in the analysis log. Include the horizon,
+4. Use the relevant company, valuation, macro, news, market-behavior, portfolio,
+   suitability, and execution skills before changing a status.
+5. Write an immutable batch snapshot under
+   `research/symbols/<SYMBOL>/history/`, update `LATEST.md`, and append the
+   decision to `DECISIONS.md`. Never delete the folder when a symbol is archived.
+6. Record each material decision in the analysis log. Include the horizon,
    confidence, thesis, valuation or entry conditions, risks, invalidation, and
    next review.
-5. Add a symbol only with a research reason. Move removed symbols to the archive
+7. Use 1 trading day, 2 weeks, 1 month, and 2 months as the standard horizons.
+   For each, state a flat band and up/flat/down probabilities totaling 100%, or
+   use `insufficient evidence` with no fabricated percentages.
+8. Report in USD and keep unlevered risk separate from approximate 5x gross
+   linear exposure before financing, spread, slippage, gaps, margin calls, and
+   liquidation.
+9. Add a symbol only with a research reason. Move removed symbols to the archive
    and change log rather than deleting their history.
-6. Platform aliases are not universal tickers. Resolve them to the exact
+10. Platform aliases are not universal tickers. Resolve them to the exact
    security, futures contract, fund, index, cash product, or CFD before using
    market data or planning execution.
 
