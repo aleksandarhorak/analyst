@@ -2,7 +2,7 @@
 
 <!-- analyst-template: latest-v2 -->
 
-> Evidence-bounded batch result: research stopped before directional judgment.
+> Current official-source batch result with an evidence-bounded directional abstention.
 
 ## Instrument
 
@@ -11,31 +11,37 @@
 - Watchlist description: Commercial aircraft, defense, space, and aviation services.
 - Exact venue/product: The Boeing Company — common_stock on XNYS; instrument `sec:cik:0000012927:BA`
 - Reporting currency: USD
-- Batch ID / decision cutoff: `2026-08-01T004949Z` / `2026-08-01T00:49:49Z`
+- Batch ID / decision cutoff: `2026-08-01T023654Z` / `2026-08-01T02:36:54Z`
 
 ## Price And Evidence
 
 | Item | Value | Timestamp | Source/status |
 |---|---:|---|---|
-| Native price/value | — | `2026-08-01T00:49:49Z` | Unavailable (no authorized packet) |
-| USD price/value | — | `2026-08-01T00:49:49Z` | No conversion or quote used |
-| Market session / delay | — | `2026-08-01T00:49:49Z` | Cannot classify without an authorized provider packet |
+| Native price/value | — | `2026-08-01T02:36:54Z` | Unavailable (no authorized price packet) |
+| USD price/value | — | `2026-08-01T02:36:54Z` | No conversion or quote used |
+| Market session / delay | — | `2026-08-01T02:36:54Z` | Cannot classify without an authorized packet and exact product |
 
 ## News And Catalysts
 
-Identity resolved from the [SEC ticker/exchange file](https://www.sec.gov/files/company_tickers_exchange.json), accessed 2026-08-01T00:33:11Z. The [SEC EDGAR issuer page](https://www.sec.gov/edgar/browse/?CIK=12927) was included in the current filing search for `2026-06-02T00:00:00Z` through `2026-08-01T00:49:49Z`. The search establishes public-source availability, but every filing and exhibit was not fully reconciled and no authorized news packet was acquired; therefore this is not a no-material-news conclusion.
+Official-source search covered `2026-07-25T02:36:54Z` through `2026-08-01T02:36:54Z` and carried unresolved material items from `2026-06-02T02:36:54Z`. The newest useful public record was [Boeing Q2 2026 results](https://investors.boeing.com/investors/news/press-release-details/2026/Boeing-Reports-Second-Quarter-Results/default.aspx), published 2026-07-28.
 
-Catalyst conclusion: **insufficient evidence**. No event surprise, expectation
-comparison, observed market response, or priced-in inference is asserted.
+Reported fact: Boeing reported $24.560 billion revenue, a $0.67 GAAP diluted loss per share, $1.364 billion operating cash flow, $631 million non-GAAP free cash flow and $715.261 billion backlog, with continuing program and certification risk.
+
+Review boundary: Release, tables, reconciliation and cautions reviewed; the full Form 10-Q was not exhaustively reviewed. Web access occurred after the decision cutoff and no archived response hash or authorized news packet was created, so point-in-time retrieval integrity is not independently proven. No prior-expectation, price/volume response, or priced-in conclusion is asserted.
+
+Catalyst conclusion: **official event reviewed; transmission incomplete / insufficient evidence for direction**.
 
 ## Fundamentals, Macro, And Market Behavior
 
-- Fundamental or supply/demand view: Insufficient evidence. No authorized current price/news provider is configured, and no reconciled current filing, fundamental model, valuation, volume, volatility, flow, or positioning packet was completed.
-- Market regime: Not assigned; no point-in-time macro-vintage packet was used.
-- Observed behavior: None asserted; price alone was unavailable and psychology
-  is not inferred.
-- Candidate mechanism, counterevidence, and falsifier: No mechanism proposed.
-  A validated price/news/fundamental evidence set is required before analysis.
+- Fundamental, valuation, or supply/demand view: Limited to the reported event above. No complete statement reconciliation, normalized forecast, peer comparison, reverse valuation or conditional value range was completed; the event cannot by itself establish investment merit.
+- Market regime: Not assigned; no decision-time macro-vintage packet was used.
+- Observed behavior: None asserted. No validated price, volume, volatility,
+  participant-flow or positioning series was available, and psychology is not
+  inferred from a headline.
+- Candidate mechanism, counterevidence, and falsifier: No behavioral mechanism
+  changes the forecast. A validated start value, expectations, market response,
+  economically linked forecast/valuation or exact product, and an applicable
+  calibration base are required before a directional conclusion.
 
 ## Directional Probabilities
 
@@ -51,29 +57,33 @@ comparison, observed market response, or priced-in inference is asserted.
 ## Risk And 5x Leverage
 
 - Reference capital: — USD
-- Unlevered downside: —; no verified start value or scenario range.
-- Approximate 5x gross linear downside before costs: —; multiplication of an
-  unsupported scenario would create false precision.
+- Unlevered downside: —; no verified start value and reconciled scenario range.
+- Approximate 5x gross linear downside before costs: —; multiplying an unsupported
+  scenario would create false precision.
 - Financing, spread, slippage, gap, margin-call, and liquidation effects:
-  Unbounded without instrument/broker terms. A 20% adverse underlying move would
-  be about 100% of capital at 5x before costs, but this generic identity is not a
-  forecast or product-specific margin analysis.
+  Unbounded without broker terms and a validated exposure. A 20% adverse
+  underlying move would be about 100% of capital at 5x before costs, but that
+  generic identity is not a forecast or product-specific margin analysis.
 
 ## Decision
 
 - Status: Observe / evidence-bounded abstention
-- Thesis and strongest contrary case: No supported directional thesis. A current
-  unreviewed filing, catalyst, price move, valuation state, or exact product term
-  could materially change the view; that is the reason for abstention.
+- Thesis and strongest contrary case: The current public item is informative but
+  does not establish surprise, valuation, observed response or calibrated
+  direction. Missing or contradictory price, expectation, filing, product and
+  risk evidence could materially reverse any view.
 - Invalidation and next review: The insufficiency finding expires when exact
-  identity plus validated price, news, fundamental/physical, valuation, and risk
+  identity plus validated price, news, fundamental/physical, valuation and risk
   evidence are available; review no later than 2026-08-08.
-- Immutable snapshot: [Snapshot](history/2026-08-01T004949Z.md)
+- Immutable snapshot: [Snapshot](history/2026-08-01T023654Z.md)
 
 ## Data Lineage
 
-- Online-source access completed: `2026-08-01T00:50:51Z`
-- Evidence packet IDs: — (no usable `evidence-packet-v1` for a decision)
+- Online-source access completed: `2026-08-01T02:43:26Z`
+- Search window: `2026-07-25T02:36:54Z` through `2026-08-01T02:36:54Z`, with unresolved events
+  carried from `2026-06-02T02:36:54Z`
+- Evidence packet IDs and raw hashes: — (no usable decision packet)
 - Registered forecast IDs: — (no probabilities published)
+- Official source record(s): https://investors.boeing.com/investors/news/press-release-details/2026/Boeing-Reports-Second-Quarter-Results/default.aspx
 - Identity registry: [instrument-registry-v1](../../../.codex/skills/acquire-point-in-time-financial-data/references/instrument-registry-v1.json)
 - Template version: 2
