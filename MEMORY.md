@@ -40,12 +40,25 @@ secrets, or copied research here.
   support SEC companyfacts, explicit FRED/ALFRED real-time periods, and CFTC COT
   PRE data; authorized price/news providers use a strict JSON process contract.
   Credentials stay at runtime and failed, partial, misidentified, wrong-unit, or
-  after-cutoff packets are unusable. The design evidence is under
+  stale or after-cutoff packets are unusable. Validation covers the complete
+  packet schema, exact registered identity, currency, market session, source
+  timestamps, requested cutoff, and quality state. The versioned instrument
+  registry records resolved official identities and leaves ambiguous aliases
+  unresolved. The design evidence is under
   `research/financial-data-and-model-governance/` as of 2026-08-01.
-- Forecasts and outcomes are separate append-only hashed JSONL ledgers under
-  `forecasts/`. The calibration skill computes multiclass Brier/log loss,
-  accuracy, coverage, and reliability bins. `scripts/run-financial-evals.py`
-  executes public or controlled-holdout assertions and blocks critical failures.
+- Forecasts and outcomes are separate append-only JSONL ledgers under
+  `forecasts/`; each record has an independently verifiable content hash rather
+  than a hash chain. Registration and resolution require validated evidence
+  packets whose identity, timing, return, and interval match the ledger event.
+  Calibration reports a fixed baseline, score deltas, sparse-sample warnings,
+  worst cases, multiclass Brier/log loss, accuracy, coverage, and reliability
+  bins.
+- `scripts/run-financial-evals.py` withholds all assertions and expected values
+  from candidate input, validates case structure, supports repeated runs and a
+  fixed baseline, and records public/holdout, rubric, scorer, candidate,
+  response, and candidate-input hashes. The public suite contains 21 adverse
+  cases across the financial and safety lanes. The recorded replay result is a
+  harness verification only, not evidence of model quality.
 - `SYMBOLS.md` is the active-universe source of truth. The exact user request
   `do symbols research` triggers current online price and news research for
   every active row, with no silent omissions.
@@ -72,7 +85,28 @@ secrets, or copied research here.
   communications are prohibited from repository files, Git history, symbol or
   forecast memory, evaluations, and logs. Personalized workflows require an
   approved secure client system, minimization, redacted references, lifecycle
-  controls, current jurisdictional review, and synthetic repository tests.
+  controls, current jurisdictional review, and synthetic repository tests. The
+  repository scanner covers research and operational artifacts plus common
+  contact, payment, account, government-ID, sensitive-key, and private-key
+  patterns, with positive and false-positive self-tests; it remains a backstop,
+  not authorization to store client data.
+
+## Operational Baseline And Limits
+
+- The first complete immutable operational batch is
+  `2026-08-01T004949Z`: all 38 active symbols were preserved, 31 SEC-listed
+  identities were resolved, and 7 generic commodity/index aliases remained
+  unresolved. With no authorized live quote/news adapter and incomplete
+  filing, valuation, and risk evidence, every horizon correctly records
+  `insufficient evidence`; no probabilities or risk numbers were invented.
+- The repository has no licensed live price/news feed or broker product
+  catalogue. Exact instrument resolution and current decision-grade analysis
+  therefore remain unavailable for some instruments until an authorized source
+  is connected.
+- No genuine registered forecasts have matured into verified outcomes, so live
+  calibration is unmeasured. Evaluation also lacks a secret holdout, an actual
+  model candidate run, and blinded human review; the current replay proves the
+  harness mechanics only.
 
 ## Development Workflow
 
