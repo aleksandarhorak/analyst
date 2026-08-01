@@ -198,6 +198,12 @@ else
   fail 'client-data governance and leak check failed'
 fi
 
+if python3 scripts/check-docs.py; then
+  pass 'documentation links and user-guide contracts'
+else
+  fail 'documentation links or user-guide contracts failed'
+fi
+
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do
   if grep -Fq "$phrase" AGENTS.md; then
     pass "core guardrail is present: ${phrase}"

@@ -7,9 +7,9 @@
 - [x] Inventory affected policy, documentation, provider contracts, evaluations,
   fixtures, tests, and quality gates.
 - [x] Add bounded parallel-agent policy and regression coverage.
-- [ ] Replace the long root guide with a concise task map and five-minute path.
-- [ ] Move copy-ready recipes to `docs/PROMPTS.md`.
-- [ ] Add a worked example, expected outputs, and troubleshooting guidance.
+- [x] Replace the long root guide with a concise task map and five-minute path.
+- [x] Move copy-ready recipes to `docs/PROMPTS.md`.
+- [x] Add a worked example, expected outputs, and troubleshooting guidance.
 - [ ] Document authorized provider onboarding and add a safe preflight diagnostic.
 - [ ] Document real-candidate, controlled-holdout, and blinded-review operations.
 - [ ] Record licensed feeds, external candidates/reviewers, secret holdouts, and
