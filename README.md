@@ -28,12 +28,14 @@ Open the repository in the agent environment and enter:
 do symbols research
 ```
 
-The agent will read [`SYMBOLS.md`](SYMBOLS.md), cover every active instrument,
-verify identities and available evidence, preserve explicit abstentions, update
-[`REPORT.md`](REPORT.md) and per-symbol memory, then run repository checks.
+This exact command is the master full-depth watchlist workflow. The agent reads
+[`SYMBOLS.md`](SYMBOLS.md), processes every active instrument through every
+applicable evidence, fundamentals/product, valuation, macro, news, behavior,
+thesis, forecast, and downside lane, preserves immutable decisions, updates
+[`REPORT.md`](REPORT.md), and runs repository checks. It is not a price/news scan.
 
-That prompt takes seconds to enter, but a complete current research batch can
-take substantially longer and changes repository files. Read the
+That prompt takes seconds to enter, but a complete batch may take hours. It is
+checkpointed and resumable and changes many repository files. Read the
 [worked walkthrough](docs/QUICKSTART.md) before the first run.
 
 For a chat-only first task, try:
@@ -48,7 +50,7 @@ if evidence is insufficient.
 
 | Goal | Prompt recipe | Normal result |
 | --- | --- | --- |
-| Research the full watchlist | `do symbols research` | Versioned repository batch |
+| Research the full watchlist | `do symbols research` | Resumable full-depth versioned batch |
 | Analyze one company | [Research one company](docs/PROMPTS.md#research-one-company) | Fundamental memo |
 | Estimate company value | [Value a company](docs/PROMPTS.md#value-a-company) | Scenarios and valuation range |
 | Form a complete view | [Investment thesis](docs/PROMPTS.md#build-a-complete-investment-thesis) | Decision packet |
@@ -64,6 +66,11 @@ if evidence is insufficient.
 
 See the complete [prompt cookbook](docs/PROMPTS.md) for reusable templates and
 prompt-quality modifiers.
+
+The company, valuation, thesis, news, macro, behavior, and commodity recipes are
+standalone entry points and automatic components of the full-watchlist batch
+when applicable. Portfolio, suitability, and detailed execution work remain
+conditional on their required portfolio, client, jurisdiction, and order inputs.
 
 ## What a Strong Request Includes
 
@@ -84,14 +91,15 @@ or conclusions based on missing client facts.
 
 ## Parallel Work
 
-For large tasks with independent lanes, the lead agent may use the minimum
-number of subagents needed. All lanes receive the same identity, decision
+For `do symbols research`, the agent automatically uses the minimum useful
+number of bounded parallel lanes when independent work exists. Other large
+prompts can request the same behavior explicitly. All lanes receive one identity, decision
 cutoff, units, and evidence rules. Work is read-only by default; any edits use
 one writer per path. Subagents receive no extra data access or order authority,
 and the lead agent verifies every material source, calculation, diff, and final
 conclusion.
 
-Add this optional sentence to a large prompt:
+Add this optional sentence to another large prompt:
 
 ```text
 Use bounded parallel subagents for genuinely independent lanes where useful.
@@ -108,7 +116,9 @@ A substantial result should normally include:
 3. primary evidence near each material claim;
 4. reconciled calculations and clearly labeled estimates;
 5. base, bull, and bear scenarios when uncertainty is material;
-6. downside, liquidity, costs, conflicts, alternatives, and execution issues;
+6. downside, liquidity, costs, conflicts, alternatives, and instrument-level
+   implementation issues; portfolio fit, suitability, and a detailed execution
+   plan appear only when their required inputs exist;
 7. disconfirmers, invalidation, monitoring triggers, and unresolved questions.
 
 `Insufficient evidence` is a valid result. It means the agent cannot support a
@@ -120,6 +130,9 @@ decision without increasing the risk of a false or unsafe claim.
 - [`REPORT.md`](REPORT.md): latest complete watchlist batch.
 - [`research/symbols/`](research/symbols/): current views, append-only decisions,
   and immutable point-in-time histories.
+- `research/batches/<batch-id>/`: resumable lane checkpoint and shared macro
+  evidence, per-symbol drafts/calculations, shared reconciliation, and governed
+  pre-snapshot corrections for each full-depth run.
 - [`forecasts/`](forecasts/): evidence-linked forecast and outcome ledgers.
 - [`evaluations/`](evaluations/): regression cases, fixtures, and evaluation
   documentation.

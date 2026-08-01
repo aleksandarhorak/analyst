@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import re
 import sys
@@ -20,7 +21,10 @@ class SymbolRecord:
 
 ROW_PATTERN = re.compile(r"^\|\s*`([A-Z0-9._-]+)`\s*\|")
 REQUIRED_FILES = ("LATEST.md", "DECISIONS.md")
-LATEST_MARKER = "<!-- analyst-template: latest-v2 -->"
+LATEST_MARKERS = (
+    "<!-- analyst-template: latest-v2 -->",
+    "<!-- analyst-template: latest-v3 -->",
+)
 DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
 
 
@@ -78,6 +82,7 @@ def initialize_report(repo_root: Path, records: list[SymbolRecord], template: st
     summary_rows = []
     probability_rows = []
     risk_rows = []
+    completion_rows = []
     for record in records:
         link = f"research/symbols/{record.symbol}/LATEST.md"
         summary_rows.append(
@@ -86,10 +91,31 @@ def initialize_report(repo_root: Path, records: list[SymbolRecord], template: st
         )
         probability_rows.append(f"| `{record.symbol}` | — | — | — | — | Insufficient |")
         risk_rows.append(f"| `{record.symbol}` | — | — | — | Not researched |")
+        completion_rows.append(
+            f"| `{record.symbol}` | not_started | not_started | not_started | "
+            "not_started | not_started | not_started | not_started |"
+        )
+    state = {
+        "schema_version": "symbol-research-report-state-v1",
+        "batch_id": None,
+        "batch_status": "initialized",
+        "decision_cutoff": None,
+        "access_completed_at": None,
+        "reporting_currency": "USD",
+        "research_depth_contract": "full-depth-v1",
+        "batch_checkpoint": None,
+        "shared_macro_status": "not_started",
+        "evidence_record_count": 0,
+        "forecast_registration_count": 0,
+        "active_symbols": [record.symbol for record in records],
+        "symbol_states": {record.symbol: "not_started" for record in records},
+    }
     content = (
         template.replace("{{SUMMARY_ROWS}}", "\n".join(summary_rows))
         .replace("{{PROBABILITY_ROWS}}", "\n".join(probability_rows))
         .replace("{{RISK_ROWS}}", "\n".join(risk_rows))
+        .replace("{{COMPLETION_ROWS}}", "\n".join(completion_rows))
+        .replace("{{REPORT_STATE_JSON}}", json.dumps(state, indent=2))
     )
     report_path.write_text(content, encoding="utf-8")
     return True
@@ -130,7 +156,9 @@ def check(repo_root: Path, records: list[SymbolRecord]) -> list[str]:
             if not (directory / filename).is_file():
                 failures.append(f"missing {record.symbol}/{filename}")
         latest_path = directory / "LATEST.md"
-        if latest_path.is_file() and LATEST_MARKER not in latest_path.read_text(encoding="utf-8"):
+        if latest_path.is_file() and not any(
+            marker in latest_path.read_text(encoding="utf-8") for marker in LATEST_MARKERS
+        ):
             failures.append(f"unmigrated {record.symbol}/LATEST.md")
         decisions_path = directory / "DECISIONS.md"
         if decisions_path.is_file() and DECISIONS_MARKER not in decisions_path.read_text(encoding="utf-8"):

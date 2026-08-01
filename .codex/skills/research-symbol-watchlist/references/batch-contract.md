@@ -12,6 +12,9 @@
 - Leverage convention: unlevered results plus 5x gross linear exposure, before
   costs and broker liquidation mechanics.
 - Research capacity: impersonal analysis unless suitability was completed.
+- Batch state: one `RUN.json`, active-universe hash, shared cutoff, lane status,
+  blockers, and resumption metadata.
+- Depth contract: `full-depth-v1` from `full-depth-contract.md`.
 
 ## Per-Symbol Evidence Minimum
 
@@ -20,12 +23,18 @@
    delay. Convert to USD only with a sourced FX rate and retain native value.
 3. Verified material news or an explicit no-material-news result with searched
    sources and window.
-4. Fundamental/company or macro/supply-demand state appropriate to asset class.
-5. Observed market response and a bounded behavioral analysis.
-6. Bull, base/flat, and bear drivers; disconfirmers and invalidation.
-7. Four probability distributions or `insufficient evidence`.
-8. Unlevered and 5x downside with financing, gap, margin, and liquidation caveats.
-9. Confidence, next catalysts, monitoring signals, and next review.
+4. Reconciled fundamentals and valuation for equities, or complete product,
+   physical, contract, index, and scenario analysis appropriate to the asset.
+5. Shared macro regime plus instrument-specific transmission.
+6. Observed market response and evidence-bounded behavioral analysis.
+7. Complete impersonal thesis with base/bull/bear drivers, market-implied view,
+   catalysts, contrary case, disconfirmers, invalidation, and monitoring.
+8. Four registered probability distributions or horizon-specific justified
+   abstentions.
+9. Unlevered and 5x downside with liquidity, financing, spread, slippage, path,
+   gap, margin, and liquidation effects.
+10. A machine-readable terminal status for every full-depth lane. A missing
+    dependency blocks only the outputs that depend on it.
 
 ## Durable Files
 
@@ -34,9 +43,18 @@
 - `research/symbols/<SYMBOL>/history/<batch-id>.md`: immutable full snapshot.
 - `research/symbols/<SYMBOL>/history/MANIFEST.jsonl`: hash-chained snapshot and
   decision-row manifest.
+- `research/batches/<batch-id>/RUN.json`: resumable batch and lane checkpoint.
+- `research/batches/<batch-id>/MACRO.md`: shared point-in-time macro regime and
+  source ledger, mapped to per-symbol transmission.
+- `research/batches/<batch-id>/symbols/<SYMBOL>/`: resumable latest/decision
+  drafts, calculations, and eligible/ineligible evidence and attempt ledger.
+- `research/batches/<batch-id>/{IDENTITY,PREFLIGHT,RECONCILIATION,PUBLICATION}.md`:
+  persisted shared-stage work.
+- `research/batches/<batch-id>/CORRECTIONS.jsonl`: hash-chained pre-snapshot
+  terminal-state corrections. Post-snapshot corrections use a new batch.
 - `REPORT.md`: complete cross-symbol current summary linking each `LATEST.md`.
 
-On a new run, prepare a complete `latest-v2` draft and decision JSON, then use
+On a new run, prepare a complete `latest-v3` draft and decision JSON, then use
 `scripts/symbol_research_history.py snapshot`. It exclusively creates the
 history file, appends the hash-chained manifest and decision row, and atomically
 replaces `LATEST.md`. Never write these four operations by hand. Run `verify`
@@ -47,6 +65,11 @@ Use `scripts/migrate_symbol_templates.py --apply` only for a versioned,
 non-destructive migration. It may insert a marker or a missing section but must
 preserve every existing byte of substantive research. Unknown/newer versions
 stop the migration.
+
+Existing `latest-v2` and `report-v2` artifacts remain valid immutable history.
+Do not rewrite them merely to change template version. Every new live batch uses
+v3 and passes the full-depth control-block validator before snapshot or report
+publication.
 
 ## Probability Record
 
@@ -72,6 +95,10 @@ The detailed linked file owns band, start value, evidence, and calibration.
 - Active-universe count equals probability-table count.
 - Active-universe count equals risk-table count.
 - Every active symbol has a working `LATEST.md` link and decision ledger.
+- Every active symbol has a current immutable snapshot for the report batch and
+  the same batch ID/cutoff in its v3 control block.
+- Every full-depth lane is terminal; external blockers make the batch `partial`.
+- `RUN.json` and `REPORT.md` reconcile active order, state, and blocker counts.
 - Missing data is explicit and does not remove the symbol from the batch.
 - Archived folders remain available but do not appear as active unless restored
   in `SYMBOLS.md`.

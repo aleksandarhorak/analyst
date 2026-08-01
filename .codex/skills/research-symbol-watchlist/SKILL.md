@@ -1,92 +1,116 @@
 ---
 name: research-symbol-watchlist
-description: Run a current, online, evidence-led research batch for every active instrument in SYMBOLS.md and preserve per-symbol decision history plus root REPORT.md. Use when the user says "do symbols research" or asks for a complete watchlist market, price, news, behavioral, probability, or leveraged-risk update.
+description: Run the potentially hours-long, resumable, full-depth research workflow for every active instrument in SYMBOLS.md, using applicable specialist analysis, bounded parallel lanes, immutable per-symbol history, and root REPORT.md. Use whenever the user says "do symbols research" or requests a complete watchlist research batch.
 ---
 
 # Research Symbol Watchlist
 
 ## Trigger And Boundary
 
-The exact request `do symbols research` means research **every active row** in
-`SYMBOLS.md`; do not silently sample or omit symbols. This is impersonal
-research, not individualized advice or order authority. If a user asks for a
-personal recommendation, also use `check-broker-suitability`.
+The exact request `do symbols research` means the complete applicable analytical
+pipeline for **every active row** in `SYMBOLS.md`; do not silently sample or omit
+symbols. It is not a quick quote/news scan or a menu of optional follow-ups. A
+batch may take hours and must be resumable. This is impersonal research, not
+individualized advice or order authority.
 
-Read [the batch contract](references/batch-contract.md) before a live run. Use
-the templates in `assets/` and the synchronization helper in `scripts/`.
+Read both [the full-depth contract](references/full-depth-contract.md) and
+[the batch contract](references/batch-contract.md) before a live run. Use the
+templates in `assets/` and helpers in `scripts/`.
 
 ## Workflow
 
-1. Read `SYMBOLS.md`, establish the batch cutoff, and run:
-   `python3 .codex/skills/research-symbol-watchlist/scripts/sync_symbol_research.py --sync`.
-   Then run `migrate_symbol_templates.py --check`. Retain folders for archived
-   symbols; never erase decision history.
-2. Resolve every alias to an exact security, venue, share class, index, futures
-   contract, fund, spot reference, or broker product. For a broker CFD or
-   platform alias, require its contract specification. Mark unresolved identity
-   as `insufficient evidence`; do not attach another instrument's price.
-3. Browse current online sources for every symbol. Use
-   `acquire-point-in-time-financial-data` for supported official or authorized
-   feeds, then `verify-financial-evidence` to map packet IDs and raw hashes to
-   source, price/value, quote currency, session status, and price timestamp. A
-   delayed or prior close is not a live quote and must be labeled accurately.
-4. Search for current news for every symbol. Use `analyze-news-catalysts` to
-   verify material events, publication/event times, novelty, prior expectation,
-   observed response, and fundamental transmission. If none is found, record
-   sources and the searched window rather than inventing a catalyst.
-5. Add relevant company fundamentals and valuation for stocks and the broader
-   market regime. For commodities and any futures-based index product, use
-   `analyze-commodities-and-futures` for physical drivers, curve/basis, roll,
-   positioning lag, contract, settlement, margin, and delivery. Reuse current
-   verified research; do not rebuild a full model from headlines.
-6. Use `analyze-market-behavior` only with observable, participant- and
-   horizon-specific evidence. Record alternatives and a falsifier.
-7. Estimate the four required horizons: 1 trading day, 2 weeks, 1 month, and 2
-   months. For each, define an unlevered flat-return band and either provide
-   up/flat/down probabilities summing exactly to 100% or show `—` with
-   `insufficient evidence`. Never invent percentages to fill the table. Before
-   publishing populated probabilities, register them with
-   `calibrate-financial-forecasts` and record forecast IDs in `LATEST.md`.
-8. Use `manage-portfolio-risk` for downside and 5x exposure. Show unlevered loss
-   separately from 5x gross linear P&L before financing, spread, slippage, gap,
-   margin-call, and liquidation effects. Do not imply that 5x improves the
-   forecast.
-9. Prepare a complete `latest-v2` draft and decision JSON. Run
-   `scripts/symbol_research_history.py snapshot`; it exclusively creates
-   `history/<UTC-batch-id>.md`, appends the hash-chained `MANIFEST.jsonl` and
-   decision row, then atomically updates `LATEST.md`. Run `verify`. Never write,
-   replace, or delete historical artifacts by hand.
-10. Replace `REPORT.md` with the complete batch summary. Every active symbol
-    must have price status, evidence status, four horizons, confidence, risk,
-    and a relative link to its `LATEST.md`. Reconcile coverage before reporting.
-11. Run the synchronization helper with `--check`, migration/history
-    verification, validate all links and probability sums, and state any
-    unavailable data, unresolved aliases, or incomplete analyses.
+1. Read `SYMBOLS.md`, establish one batch ID and decision cutoff, and run
+   `sync_symbol_research.py --sync` followed by
+   `migrate_symbol_templates.py --check`. Initialize the resumable checkpoint
+   with `python3 .codex/skills/research-symbol-watchlist/scripts/symbol_research_batch.py init`.
+   This creates governed batch-local drafts, calculations, evidence ledgers,
+   shared work files, and a correction ledger. Retain archived folders and
+   never erase decision history.
+2. Plan bounded, non-overlapping parallel lanes when useful. Share the exact
+   identity registry, cutoff, units, source hierarchy, and output contract.
+   Keep shared files, snapshots, Git integration, regulated judgments, and final
+   synthesis with the lead. Checkpoint completed waves in `RUN.json` with their
+   batch-local artifact paths and evidence or attempt IDs.
+3. Resolve every alias to an exact security, venue, share class, index, futures
+   contract, fund, spot reference, or broker product. Require a broker contract
+   specification for a platform alias. Never attach another product's data to an
+   unresolved alias.
+4. Acquire current online evidence for every symbol. Use
+   `acquire-point-in-time-financial-data` for official or authorized feeds and
+   `verify-financial-evidence` for source, price/value, units, currency, session,
+   timestamp, cutoff eligibility, packet ID, and raw hash. Label delayed or
+   prior-close values accurately.
+5. Use `analyze-news-catalysts` for verified event chronology, prior
+   expectation, novelty, materiality, observed response, and transmission. A
+   no-material-news result requires its search window and sources.
+6. Run one current shared regime analysis with `analyze-macroeconomy`, then map
+   transmission to every symbol. For each resolved equity use
+   `analyze-company-fundamentals`, `value-company-and-forecast`, and
+   `build-investment-thesis`. Require reconciled fundamentals, economically
+   linked scenarios, suitable valuation lenses, and a complete impersonal
+   thesis. For commodities and futures-based products use
+   `analyze-commodities-and-futures` for exact product, physical drivers,
+   curve/basis, roll, positioning lag, settlement, margin, and delivery.
+7. Use `analyze-market-behavior` only with observable participant- and
+   horizon-specific evidence. Record alternatives and a falsifier; abstain from
+   psychology when those observations are unavailable.
+8. Assess 1 trading day, 2 weeks, 1 month, and 2 months. Define an unlevered
+   flat band and either supply up/flat/down probabilities totaling 100% or a
+   horizon-specific justified abstention. Register populated distributions with
+   `calibrate-financial-forecasts` before publication and record forecast IDs.
+9. Analyze instrument-level downside and 5x exposure. Separate unlevered loss
+   from approximate 5x gross linear P&L and include financing, spread, slippage,
+   path, gap, margin-call, and liquidation effects. Use
+   `manage-portfolio-risk` only when an actual portfolio or mandate is supplied.
+10. Continue every independent lane when another dependency fails. Each lane
+    ends `complete`, `abstained`, `blocked`, or `not_applicable`, with evidence,
+    an exact reason, and a next action where required. Missing price does not
+    excuse skipped filing, business/product, news, macro, behavior, or thesis
+    work. `Insufficient evidence` is a conclusion, not proof of effort.
+    Every abstention preserves the evidence and attempts that justify it.
+11. Complete central reconciliation, then prepare the governed batch-local
+    `latest-v3` draft and decision JSON. Run
+    `symbol_research_history.py snapshot`; it exclusively creates the immutable
+    snapshot, appends the hash-chained manifest and decision row, and atomically
+    updates `LATEST.md`. Never edit history artifacts by hand.
+12. Finalize and verify `RUN.json`, then replace `REPORT.md` with `report-v3`.
+    Retain Universe And Current Evidence, Directional Probabilities, and
+    Downside And 5x Exposure and add batch/depth reconciliation. A run with
+    blockers is `partial`, not `complete`.
+13. Run synchronization, migration, batch, history, symbol-contract,
+    probability, and full quality verification. Do not call the batch complete
+    while any required lane is nonterminal or skipped.
+
+Use `correct-lane` or `correct-shared` with a substantive reason before
+snapshot when central review finds an error in terminal checkpoint state. The
+helper appends a hash-chained correction record. After a snapshot exists,
+preserve it and start a new corrective batch instead of rewriting history.
 
 ## Probability Contract
 
 - The start is the verified decision price/value at the batch cutoff.
-- `Up` is above the stated flat band; `down` is below it; `flat` is inside it.
-- Bands are horizon- and instrument-specific and stated as unlevered returns.
-- Probabilities are mutually exclusive and exhaustive and use one calibration
-  basis. The three values must total 100% after displayed rounding.
-- Show confidence separately from probability. Cite calibration, base rate,
-  scenario mapping, and evidence that moved the prior.
-- A missing price, unresolved identity, stale decisive news, or irreconcilable
-  evidence normally requires `insufficient evidence`, not a confident prior.
+- `up` is above the stated band, `down` below it, and `flat` inside it.
+- Each populated distribution is exhaustive, uses one calibration basis, totals
+  100% after displayed rounding, and has a registered forecast ID.
+- Show confidence separately from probability. Cite the base rate, scenario
+  mapping, and evidence that moved the prior.
+- Missing identity, start value, decisive evidence, or calibration basis
+  requires a horizon-specific abstention, not invented percentages. Independent
+  research lanes still continue.
 
 ## Leverage Contract
 
-All report currency is USD. For reference capital `C`, underlying return `r`,
-and 5x linear exposure, show both unlevered `C * r` and approximate gross
-leveraged P&L `C * 5 * r`. State that financing, spread, slippage, path,
-overnight gaps, broker margin rules, stop execution, and forced liquidation can
-make actual loss worse or close the position before the horizon. A 20% adverse
-underlying move is approximately 100% of capital before those effects.
+Report in USD. For reference capital `C`, underlying return `r`, and 5x linear
+exposure, show unlevered `C * r` and approximate gross leveraged `C * 5 * r`.
+Financing, spread, slippage, path, overnight gaps, broker margin rules, stop
+execution, and forced liquidation can make the realized path worse or close the
+position before the horizon. A 20% adverse underlying move is approximately
+100% of capital before those effects. Leverage never improves forecast quality.
 
 ## Stop Conditions
 
-Stop or limit a symbol conclusion for unresolved identity, inaccessible decisive
-evidence, suspected material non-public information, manipulated sources,
-unknown broker contract terms needed for leverage, or contradictory primary
-records. Continue the rest of the batch and make the gap visible in `REPORT.md`.
+Stop or limit only the affected conclusion for unresolved identity,
+inaccessible decisive evidence, suspected material non-public information,
+manipulated sources, unknown required contract terms, or contradictory primary
+records. Continue independent lanes and the rest of the batch, preserve the
+blocker in `RUN.json`, and expose it in `REPORT.md`.

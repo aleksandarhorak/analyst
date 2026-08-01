@@ -1,4 +1,4 @@
 interface:
   display_name: "Research Symbol Watchlist"
-  short_description: "Research every watchlist symbol and preserve decisions"
-  default_prompt: "Use $research-symbol-watchlist to run current online research for every active symbol and update the durable report."
+  short_description: "Run full-depth research for every watchlist symbol"
+  default_prompt: "Use $research-symbol-watchlist to run the complete, resumable, full-depth workflow for every active symbol, use bounded parallel lanes where safe, preserve immutable decisions, and publish a reconciled REPORT.md."
