@@ -16,7 +16,7 @@ Request:
   "kind": "price",
   "decision_cutoff": "2026-08-01T12:00:00Z",
   "instrument": {
-    "id": "provider:venue:security-id",
+    "id": "sec:cik:0000320193:AAPL",
     "symbol": "AAPL",
     "venue": "XNAS",
     "asset_class": "equity"
@@ -38,7 +38,7 @@ Response:
   "provider": "authorized-provider-name",
   "complete": true,
   "instrument": {
-    "id": "provider:venue:security-id",
+    "id": "sec:cik:0000320193:AAPL",
     "symbol": "AAPL",
     "venue": "XNAS",
     "asset_class": "equity"
@@ -57,6 +57,7 @@ Response:
       "as_of": "2026-08-01T11:59:58Z",
       "session": "regular",
       "latency": "real_time",
+      "adjustment": "unadjusted",
       "source_locator": "trade:opaque-id"
     }
   ],
@@ -66,13 +67,17 @@ Response:
 
 ## Required Semantics
 
-- `complete=false`, a nonempty `errors` array, request-ID mismatch, or instrument
-  mismatch is a hard failure.
+- `complete=false`, a nonempty `errors` array, request-ID mismatch, or any ID,
+  symbol, venue, or asset-class mismatch is a hard failure. The response is also
+  reconciled to the repository instrument registry.
 - Every observation needs field, value, unit, classification, event time,
   publication time, as-of time, and source locator. Price observations also need
-  currency, session, and latency (`real_time`, `delayed`, `prior_close`,
-  `settlement`, or `indicative`).
-- Corporate-action adjustment state must be explicit for historical prices.
+  currency, session, latency (`real_time`, `delayed`, `prior_close`,
+  `settlement`, or `indicative`), and adjustment state. Currency and session
+  must match the request. `as_of` must be no later than the decision cutoff and
+  no older than `maximum_age_seconds`.
+- Corporate-action adjustment state must be explicit for every price, including
+  an explicit `unadjusted` value where applicable.
 - A `news` request needs original publisher, canonical URL, publication/update times,
   headline/document identity, and correction/retraction state. A search snippet
   is not an observation.

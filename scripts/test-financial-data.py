@@ -22,6 +22,12 @@ COMMON = [
     "--retrieved-at",
     "2025-08-01T12:01:00Z",
 ]
+PROVIDER_COMMON = [
+    "--decision-cutoff",
+    "2025-08-01T12:00:30Z",
+    "--retrieved-at",
+    "2025-08-01T12:01:00Z",
+]
 
 
 def run(arguments: list[str], expected: int = 0) -> subprocess.CompletedProcess[str]:
@@ -52,7 +58,7 @@ def main() -> int:
         run(
             [
                 "sec-companyfacts",
-                "--instrument-id", "sec:cik:0000320193",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
                 "--symbol", "AAPL",
                 "--asset-class", "equity",
                 "--venue", "XNAS",
@@ -74,9 +80,10 @@ def main() -> int:
         mismatch = run(
             [
                 "sec-companyfacts",
-                "--instrument-id", "sec:cik:0000320193",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
                 "--symbol", "AAPL",
                 "--asset-class", "equity",
+                "--venue", "XNAS",
                 *COMMON,
                 "--input-file", str(FIXTURES / "sec_companyfacts.json"),
                 "--cik", "320193",
@@ -87,6 +94,28 @@ def main() -> int:
             expected=2,
         )
         assert "no observations" in mismatch.stderr
+
+        wrong_sec_fixture = json.loads((FIXTURES / "sec_companyfacts.json").read_text(encoding="utf-8"))
+        wrong_sec_fixture["entityName"] = "Different Issuer"
+        wrong_sec_path = output / "wrong-sec.json"
+        wrong_sec_path.write_text(json.dumps(wrong_sec_fixture), encoding="utf-8")
+        wrong_sec = run(
+            [
+                "sec-companyfacts",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *COMMON,
+                "--input-file", str(wrong_sec_path),
+                "--cik", "320193",
+                "--taxonomy", "us-gaap",
+                "--concept", "RevenueFromContractWithCustomerExcludingAssessedTax",
+                "--unit", "USD",
+            ],
+            expected=1,
+        )
+        assert "issuer name" in wrong_sec.stderr
 
         fred_path = output / "fred.json"
         run(
@@ -137,6 +166,7 @@ def main() -> int:
                 "--symbol", "ARABICA",
                 "--asset-class", "commodity-future",
                 "--venue", "IFUS",
+                "--registry-key", "ARABICA-ICE-KC",
                 *COMMON,
                 "--input-file", str(FIXTURES / "cftc_cot.json"),
                 "--output", str(cftc_path),
@@ -155,11 +185,11 @@ def main() -> int:
         run(
             [
                 "provider",
-                "--instrument-id", "figi:BBG000B9XRY4",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
                 "--symbol", "AAPL",
                 "--asset-class", "equity",
                 "--venue", "XNAS",
-                *COMMON,
+                *PROVIDER_COMMON,
                 "--input-file", str(FIXTURES / "provider_price.json"),
                 "--output", str(provider_path),
                 "--request-id", "price-aapl-20250801",
@@ -185,7 +215,7 @@ def main() -> int:
         run(
             [
                 "provider",
-                "--instrument-id", "figi:BBG000B9XRY4",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
                 "--symbol", "AAPL",
                 "--asset-class", "equity",
                 "--venue", "XNAS",
@@ -200,22 +230,131 @@ def main() -> int:
         assert news["observations"][0]["metadata"]["publisher"] == "Synthetic Wire"
         assert news["observations"][0]["metadata"]["correction_status"] == "original"
 
+        price_fixture = json.loads((FIXTURES / "provider_price.json").read_text(encoding="utf-8"))
+        wrong_identity_fixture = json.loads(json.dumps(price_fixture))
+        wrong_identity_fixture["instrument"]["symbol"] = "MSFT"
+        wrong_identity_path = output / "wrong-provider-identity.json"
+        wrong_identity_path.write_text(json.dumps(wrong_identity_fixture), encoding="utf-8")
         wrong_identity = run(
             [
                 "provider",
-                "--instrument-id", "figi:WRONG",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
                 "--symbol", "AAPL",
                 "--asset-class", "equity",
-                *COMMON,
-                "--input-file", str(FIXTURES / "provider_price.json"),
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--input-file", str(wrong_identity_path),
                 "--request-id", "price-aapl-20250801",
                 "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "60",
             ],
             expected=1,
         )
         assert "identity mismatch" in wrong_identity.stderr
 
-    print("PASS financial data adapters: official fixtures, cutoff, units, identity, and secrets")
+        for field, value, expected_text in (
+            ("currency", "EUR", "currency mismatch"),
+            ("session", "extended", "session mismatch"),
+        ):
+            variant = json.loads(json.dumps(price_fixture))
+            variant["observations"][0][field] = value
+            variant_path = output / f"wrong-{field}.json"
+            variant_path.write_text(json.dumps(variant), encoding="utf-8")
+            result = run(
+                [
+                    "provider",
+                    "--instrument-id", "sec:cik:0000320193:AAPL",
+                    "--symbol", "AAPL",
+                    "--asset-class", "equity",
+                    "--venue", "XNAS",
+                    *PROVIDER_COMMON,
+                    "--input-file", str(variant_path),
+                    "--request-id", "price-aapl-20250801",
+                    "--kind", "price",
+                    "--currency", "USD",
+                    "--session", "regular",
+                    "--maximum-age-seconds", "60",
+                ],
+                expected=1,
+            )
+            assert expected_text in result.stderr
+
+        stale = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--input-file", str(FIXTURES / "provider_price.json"),
+                "--request-id", "price-aapl-20250801",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "1",
+            ],
+            expected=1,
+        )
+        assert "is stale" in stale.stderr
+
+        same_day = run(
+            [
+                "sec-companyfacts",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                "--decision-cutoff", "2025-04-25T23:59:59Z",
+                "--retrieved-at", "2025-08-01T12:01:00Z",
+                "--input-file", str(FIXTURES / "sec_companyfacts.json"),
+                "--cik", "320193",
+                "--taxonomy", "us-gaap",
+                "--concept", "RevenueFromContractWithCustomerExcludingAssessedTax",
+                "--unit", "USD",
+            ],
+            expected=2,
+        )
+        assert "cutoff-day date-granularity" in same_day.stderr
+
+        malformed = json.loads(json.dumps(provider))
+        malformed["unexpected"] = True
+        malformed_path = output / "malformed.json"
+        malformed_path.write_text(json.dumps(malformed), encoding="utf-8")
+        malformed_result = run(["validate", str(malformed_path)], expected=1)
+        assert "unsupported fields" in malformed_result.stderr
+
+        nested_malformed = json.loads(json.dumps(provider))
+        nested_malformed["observations"][0]["uncontracted"] = "reject"
+        nested_path = output / "nested-malformed.json"
+        nested_path.write_text(json.dumps(nested_malformed), encoding="utf-8")
+        nested_result = run(["validate", str(nested_path)], expected=1)
+        assert "observation 0 has unsupported fields" in nested_result.stderr
+
+        unresolved = run(
+            [
+                "provider",
+                "--instrument-id", "alias:GOLD",
+                "--symbol", "GOLD",
+                "--asset-class", "commodity",
+                *PROVIDER_COMMON,
+                "--input-file", str(FIXTURES / "provider_price.json"),
+                "--request-id", "price-aapl-20250801",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "60",
+            ],
+            expected=1,
+        )
+        assert "is unresolved" in unresolved.stderr
+
+    print(
+        "PASS financial data adapters: registry, strict schema, cutoff, freshness, "
+        "units, complete identity, and secrets"
+    )
     return 0
 
 

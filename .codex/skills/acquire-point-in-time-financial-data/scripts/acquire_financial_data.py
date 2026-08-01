@@ -23,6 +23,11 @@ from urllib.request import Request, urlopen
 SCHEMA_VERSION = "evidence-packet-v1"
 ADAPTER_VERSION = "1.0.0"
 MAX_RESPONSE_BYTES = 20 * 1024 * 1024
+DEFAULT_REGISTRY = Path(__file__).resolve().parents[1] / "references/instrument-registry-v1.json"
+PACKET_FIELDS = {
+    "schema_version", "packet_id", "created_at", "decision_cutoff", "adapter",
+    "source", "request", "instrument", "observations", "quality",
+}
 REQUIRED_OBSERVATION_FIELDS = {
     "claim_id",
     "field",
@@ -37,6 +42,8 @@ REQUIRED_OBSERVATION_FIELDS = {
     "source_locator",
 }
 CLASSIFICATIONS = {"reported_fact", "derived_fact", "estimate", "scenario", "opinion"}
+OBSERVATION_FIELDS = REQUIRED_OBSERVATION_FIELDS | {"metadata"}
+INSTRUMENT_FIELDS = {"id", "symbol", "asset_class", "venue", "resolution_status"}
 SENSITIVE_KEYS = {
     "api_key", "apikey", "authorization", "password", "secret", "token", "access_token",
     "client_secret", "private_key",
@@ -52,6 +59,8 @@ def utc_now() -> str:
 
 
 def parse_datetime(value: str, field: str) -> datetime:
+    if not isinstance(value, str):
+        raise AcquisitionError(f"{field} must be an ISO 8601 date-time with timezone")
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as error:
@@ -68,6 +77,130 @@ def temporal_after_cutoff(value: str, cutoff: datetime) -> bool:
         return parse_datetime(value, "observation time") > cutoff
     except ValueError as error:
         raise AcquisitionError(f"invalid observation date: {value}") from error
+
+
+def validate_date_or_datetime(value: Any, field: str) -> None:
+    if not isinstance(value, str) or not value:
+        raise AcquisitionError(f"{field} must be a nonempty ISO 8601 date or date-time")
+    try:
+        if len(value) == 10:
+            date.fromisoformat(value)
+        else:
+            parse_datetime(value, field)
+    except ValueError as error:
+        raise AcquisitionError(f"{field} must be an ISO 8601 date or date-time") from error
+
+
+def exact_fields(value: Any, required: set[str], allowed: set[str], field: str) -> list[str]:
+    if not isinstance(value, dict):
+        return [f"{field} must be an object"]
+    errors: list[str] = []
+    if missing := required - value.keys():
+        errors.append(f"{field} missing fields: {sorted(missing)}")
+    if extra := value.keys() - allowed:
+        errors.append(f"{field} has unsupported fields: {sorted(extra)}")
+    return errors
+
+
+def nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def normalize_identity_name(value: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", value.casefold())
+
+
+def load_registry(path: Path) -> dict[str, dict[str, Any]]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise AcquisitionError(f"instrument registry is unreadable: {error}") from error
+    errors = exact_fields(
+        data,
+        {"schema_version", "as_of", "source", "instruments"},
+        {"schema_version", "as_of", "source", "instruments"},
+        "instrument registry",
+    )
+    if errors:
+        raise AcquisitionError("; ".join(errors))
+    if data["schema_version"] != "instrument-registry-v1":
+        raise AcquisitionError("instrument registry schema mismatch")
+    try:
+        date.fromisoformat(data["as_of"])
+    except (TypeError, ValueError) as error:
+        raise AcquisitionError("instrument registry as_of must be an ISO date") from error
+    source_errors = exact_fields(
+        data["source"],
+        {"authority", "url", "accessed_at", "scope"},
+        {"authority", "url", "accessed_at", "scope"},
+        "instrument registry source",
+    )
+    if source_errors:
+        raise AcquisitionError("; ".join(source_errors))
+    if not str(data["source"].get("url", "")).startswith("https://"):
+        raise AcquisitionError("instrument registry source URL must use HTTPS")
+    parse_datetime(data["source"].get("accessed_at"), "instrument registry accessed_at")
+    instruments = data.get("instruments")
+    if not isinstance(instruments, list) or not instruments:
+        raise AcquisitionError("instrument registry instruments must be a nonempty array")
+    registry: dict[str, dict[str, Any]] = {}
+    for index, item in enumerate(instruments):
+        if not isinstance(item, dict):
+            raise AcquisitionError(f"instrument registry entry {index} must be an object")
+        key = item.get("key")
+        status = item.get("resolution_status")
+        if not nonempty_string(key) or key in registry:
+            raise AcquisitionError(f"instrument registry entry {index} has missing or duplicate key")
+        if status == "resolved":
+            required = {
+                "key", "resolution_status", "instrument_id", "symbol", "name", "asset_class",
+                "venue", "currency", "security_type", "identifiers",
+            }
+            errors = exact_fields(item, required, required, f"instrument registry entry {key}")
+            if errors:
+                raise AcquisitionError("; ".join(errors))
+            for field in ("instrument_id", "symbol", "name", "asset_class", "security_type"):
+                if not nonempty_string(item[field]):
+                    raise AcquisitionError(f"instrument registry entry {key} has invalid {field}")
+            if item["venue"] is not None and not nonempty_string(item["venue"]):
+                raise AcquisitionError(f"instrument registry entry {key} has invalid venue")
+            if item["currency"] is not None and not nonempty_string(item["currency"]):
+                raise AcquisitionError(f"instrument registry entry {key} has invalid currency")
+            if not isinstance(item["identifiers"], dict) or not item["identifiers"]:
+                raise AcquisitionError(f"instrument registry entry {key} lacks identifiers")
+        elif status == "unresolved":
+            required = {"key", "resolution_status", "name", "asset_class", "reason"}
+            errors = exact_fields(item, required, required, f"instrument registry entry {key}")
+            if errors:
+                raise AcquisitionError("; ".join(errors))
+            if any(not nonempty_string(item[field]) for field in ("name", "asset_class", "reason")):
+                raise AcquisitionError(f"instrument registry entry {key} is incomplete")
+        else:
+            raise AcquisitionError(f"instrument registry entry {key} has invalid resolution_status")
+        registry[key] = item
+    return registry
+
+
+def registry_entry(args: argparse.Namespace) -> dict[str, Any]:
+    registry = load_registry(args.registry)
+    key = args.registry_key or args.symbol
+    entry = registry.get(key)
+    if entry is None:
+        raise AcquisitionError(f"instrument registry has no entry for {key}")
+    if entry["resolution_status"] != "resolved":
+        raise AcquisitionError(f"instrument {key} is unresolved: {entry['reason']}")
+    expected = {
+        "instrument_id": args.instrument_id,
+        "symbol": args.symbol,
+        "asset_class": args.asset_class,
+        "venue": args.venue,
+    }
+    for field, supplied in expected.items():
+        if entry[field] != supplied:
+            raise AcquisitionError(
+                f"instrument registry mismatch for {field}: expected {entry[field]!r}, got {supplied!r}"
+            )
+    return entry
 
 
 def canonical_json(value: Any) -> bytes:
@@ -231,7 +364,10 @@ def build_packet(
         except AcquisitionError as error:
             errors.append(f"{claim_id}: {error}")
         if len(str(item["published_at"])) == 10:
-            flags.append(f"date-granularity publication time: {claim_id}")
+            if str(item["published_at"]) == cutoff_time.date().isoformat():
+                errors.append(f"cutoff-day date-granularity publication time is ambiguous: {claim_id}")
+            else:
+                flags.append(f"date-granularity publication time: {claim_id}")
     flags = sorted(set(flags))
     errors = sorted(set(errors))
     status = "fail" if errors else "warning" if flags else "pass"
@@ -258,76 +394,178 @@ def build_packet(
 
 
 def validate_packet(packet: Any) -> list[str]:
-    errors: list[str] = []
-    if not isinstance(packet, dict):
-        return ["packet must be an object"]
-    required = {
-        "schema_version",
-        "packet_id",
-        "created_at",
-        "decision_cutoff",
-        "adapter",
-        "source",
-        "request",
-        "instrument",
-        "observations",
-        "quality",
-    }
-    if missing := required - packet.keys():
-        errors.append(f"packet missing fields: {sorted(missing)}")
-        return errors
+    """Validate the complete dependency-free evidence-packet-v1 contract."""
+    errors = exact_fields(packet, PACKET_FIELDS, PACKET_FIELDS, "packet")
+    if errors or not isinstance(packet, dict):
+        return sorted(set(errors))
     if packet["schema_version"] != SCHEMA_VERSION:
         errors.append("unsupported schema_version")
+    packet_id = packet["packet_id"]
+    if not isinstance(packet_id, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", packet_id):
+        errors.append("packet_id must be a sha256 content identifier")
     expected_id = f"sha256:{sha256_bytes(canonical_json({k: v for k, v in packet.items() if k != 'packet_id'}))}"
-    if packet["packet_id"] != expected_id:
+    if packet_id != expected_id:
         errors.append("packet_id does not match packet contents")
     try:
         cutoff = parse_datetime(packet["decision_cutoff"], "decision_cutoff")
-        parse_datetime(packet["created_at"], "created_at")
     except AcquisitionError as error:
         errors.append(str(error))
         cutoff = datetime.max.replace(tzinfo=timezone.utc)
-    instrument = packet.get("instrument")
-    if not isinstance(instrument, dict) or instrument.get("resolution_status") != "resolved":
-        errors.append("instrument is not explicitly resolved")
-    observations = packet.get("observations")
+    try:
+        parse_datetime(packet["created_at"], "created_at")
+    except AcquisitionError as error:
+        errors.append(str(error))
+
+    adapter = packet["adapter"]
+    errors.extend(exact_fields(adapter, {"name", "version"}, {"name", "version"}, "adapter"))
+    if isinstance(adapter, dict):
+        if not nonempty_string(adapter.get("name")) or not nonempty_string(adapter.get("version")):
+            errors.append("adapter name and version must be nonempty strings")
+
+    source = packet["source"]
+    source_fields = {"authority", "url", "retrieved_at", "raw_sha256", "rights"}
+    errors.extend(exact_fields(source, source_fields, source_fields, "source"))
+    if isinstance(source, dict):
+        for field in ("authority", "rights"):
+            if not nonempty_string(source.get(field)):
+                errors.append(f"source {field} must be a nonempty string")
+        source_url = source.get("url")
+        if not nonempty_string(source_url) or not source_url.startswith("https://"):
+            errors.append("source URL must be a nonempty HTTPS URI")
+        raw_sha = source.get("raw_sha256")
+        if not isinstance(raw_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", raw_sha):
+            errors.append("source raw_sha256 must be 64 lowercase hexadecimal characters")
+        try:
+            parse_datetime(source.get("retrieved_at"), "source retrieved_at")
+        except AcquisitionError as error:
+            errors.append(str(error))
+    else:
+        source_url = ""
+
+    if not isinstance(packet["request"], dict):
+        errors.append("request must be an object")
+    instrument = packet["instrument"]
+    errors.extend(
+        exact_fields(
+            instrument,
+            {"id", "symbol", "asset_class", "resolution_status"},
+            INSTRUMENT_FIELDS,
+            "instrument",
+        )
+    )
+    if isinstance(instrument, dict):
+        for field in ("id", "symbol", "asset_class"):
+            if not nonempty_string(instrument.get(field)):
+                errors.append(f"instrument {field} must be a nonempty string")
+        if instrument.get("venue") is not None and not nonempty_string(instrument.get("venue")):
+            errors.append("instrument venue must be a string or null")
+        if instrument.get("resolution_status") != "resolved":
+            errors.append("instrument is not explicitly resolved")
+
+    observations = packet["observations"]
     if not isinstance(observations, list) or not observations:
         errors.append("observations must be a nonempty array")
     else:
         seen: set[str] = set()
         for index, item in enumerate(observations):
-            if not isinstance(item, dict):
-                errors.append(f"observation {index} is not an object")
+            label = f"observation {index}"
+            item_errors = exact_fields(item, REQUIRED_OBSERVATION_FIELDS, OBSERVATION_FIELDS, label)
+            errors.extend(item_errors)
+            if item_errors or not isinstance(item, dict):
                 continue
-            if missing := REQUIRED_OBSERVATION_FIELDS - item.keys():
-                errors.append(f"observation {index} missing fields: {sorted(missing)}")
-                continue
-            claim_id = str(item["claim_id"])
-            if claim_id in seen:
+            claim_id = item["claim_id"]
+            if not nonempty_string(claim_id):
+                errors.append(f"{label} claim_id must be a nonempty string")
+            elif claim_id in seen:
                 errors.append(f"duplicate claim_id: {claim_id}")
             seen.add(claim_id)
-            try:
-                if temporal_after_cutoff(str(item["published_at"]), cutoff):
-                    errors.append(f"after-cutoff evidence: {claim_id}")
-            except AcquisitionError as error:
-                errors.append(f"{claim_id}: {error}")
-    quality = packet.get("quality")
-    if not isinstance(quality, dict) or quality.get("status") not in {"pass", "warning", "fail"}:
-        errors.append("invalid quality object")
-    elif quality.get("status") == "fail":
-        errors.append("packet quality status is fail")
-    source = packet.get("source")
-    if not isinstance(source, dict) or not source.get("raw_sha256"):
-        errors.append("source provenance is incomplete")
-    for path in sensitive_paths(packet.get("request")):
+            for field in ("field", "source_locator"):
+                if not nonempty_string(item[field]):
+                    errors.append(f"{label} {field} must be a nonempty string")
+            for field in ("unit", "currency"):
+                if item[field] is not None and not isinstance(item[field], str):
+                    errors.append(f"{label} {field} must be a string or null")
+            if item["classification"] not in CLASSIFICATIONS:
+                errors.append(f"{label} has unsupported classification")
+            if not isinstance(item["revision"], dict):
+                errors.append(f"{label} revision must be an object")
+            if "metadata" in item and not isinstance(item["metadata"], dict):
+                errors.append(f"{label} metadata must be an object")
+            for field in ("event_time", "published_at", "as_of"):
+                try:
+                    validate_date_or_datetime(item[field], f"{label} {field}")
+                except AcquisitionError as error:
+                    errors.append(str(error))
+            published = item["published_at"]
+            if isinstance(published, str):
+                try:
+                    if temporal_after_cutoff(published, cutoff):
+                        errors.append(f"after-cutoff evidence: {claim_id}")
+                    elif len(published) == 10 and published == cutoff.date().isoformat():
+                        errors.append(
+                            f"cutoff-day date-granularity publication time is ambiguous: {claim_id}"
+                        )
+                except AcquisitionError as error:
+                    errors.append(f"{claim_id}: {error}")
+
+    quality = packet["quality"]
+    quality_fields = {"status", "flags", "errors"}
+    errors.extend(exact_fields(quality, quality_fields, quality_fields, "quality"))
+    if isinstance(quality, dict):
+        status = quality.get("status")
+        flags = quality.get("flags")
+        quality_errors = quality.get("errors")
+        if status not in {"pass", "warning", "fail"}:
+            errors.append("quality status is invalid")
+        if not isinstance(flags, list) or any(not isinstance(item, str) for item in flags):
+            errors.append("quality flags must be an array of strings")
+        if not isinstance(quality_errors, list) or any(not isinstance(item, str) for item in quality_errors):
+            errors.append("quality errors must be an array of strings")
+        if isinstance(flags, list) and isinstance(quality_errors, list):
+            expected_status = "fail" if quality_errors else "warning" if flags else "pass"
+            if status != expected_status:
+                errors.append(f"quality status is inconsistent; expected {expected_status}")
+        if status == "fail":
+            errors.append("packet quality status is fail")
+
+    for path in sensitive_paths(packet["request"]):
         errors.append(f"sensitive credential key in packet request: {path}")
-    source_url = source.get("url", "") if isinstance(source, dict) else ""
     if re.search(r"(?i)(?:api[_-]?key|access[_-]?token|authorization|password|secret)=", str(source_url)):
         errors.append("sensitive credential parameter in source URL")
     return sorted(set(errors))
 
 
+def validate_packet_registry(
+    packet: dict[str, Any], registry_path: Path, registry_key: str | None
+) -> list[str]:
+    try:
+        registry = load_registry(registry_path)
+    except AcquisitionError as error:
+        return [str(error)]
+    instrument = packet.get("instrument")
+    if not isinstance(instrument, dict):
+        return ["packet instrument cannot be reconciled to registry"]
+    key = registry_key or instrument.get("symbol")
+    entry = registry.get(key)
+    if entry is None:
+        return [f"instrument registry has no entry for {key}"]
+    if entry["resolution_status"] != "resolved":
+        return [f"instrument {key} is unresolved: {entry['reason']}"]
+    packet_identity = {
+        "instrument_id": instrument.get("id"),
+        "symbol": instrument.get("symbol"),
+        "asset_class": instrument.get("asset_class"),
+        "venue": instrument.get("venue"),
+    }
+    return [
+        f"packet instrument registry mismatch for {field}: expected {entry[field]!r}, got {actual!r}"
+        for field, actual in packet_identity.items()
+        if entry[field] != actual
+    ]
+
+
 def instrument_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    registry_entry(args)
     return {
         "id": args.instrument_id,
         "symbol": args.symbol,
@@ -338,13 +576,24 @@ def instrument_from_args(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_sec(args: argparse.Namespace) -> dict[str, Any]:
+    entry = registry_entry(args)
     cik = args.cik.zfill(10)
+    if entry["identifiers"].get("sec_cik") != cik:
+        raise AcquisitionError("SEC CIK does not match instrument registry")
     source_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
     user_agent = args.user_agent or os.environ.get("FINANCIAL_DATA_USER_AGENT", "")
     if not args.input_file and not user_agent:
         raise AcquisitionError("live SEC access requires FINANCIAL_DATA_USER_AGENT")
     raw = acquire_raw(args.input_file, source_url, user_agent, args.timeout, args.retries)
     data = load_json_bytes(raw, "SEC EDGAR")
+    if not isinstance(data, dict):
+        raise AcquisitionError("SEC response must be an object")
+    response_cik = str(data.get("cik", "")).zfill(10)
+    if response_cik != cik:
+        raise AcquisitionError("SEC response CIK does not match request and instrument registry")
+    entity_name = data.get("entityName")
+    if not nonempty_string(entity_name) or normalize_identity_name(entity_name) != normalize_identity_name(entry["name"]):
+        raise AcquisitionError("SEC response issuer name does not match instrument registry")
     try:
         units = data["facts"][args.taxonomy][args.concept]["units"]
     except (KeyError, TypeError) as error:
@@ -403,6 +652,9 @@ def run_sec(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_fred(args: argparse.Namespace) -> dict[str, Any]:
+    entry = registry_entry(args)
+    if entry["identifiers"].get("fred_series_id") != args.series_id:
+        raise AcquisitionError("FRED series does not match instrument registry")
     public_query = {
         "series_id": args.series_id,
         "realtime_start": args.realtime_start,
@@ -462,6 +714,9 @@ def run_fred(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_cftc(args: argparse.Namespace) -> dict[str, Any]:
+    entry = registry_entry(args)
+    if entry["identifiers"].get("cftc_contract_market_code") != args.contract_market_code:
+        raise AcquisitionError("CFTC contract-market code does not match instrument registry")
     where = f"cftc_contract_market_code='{args.contract_market_code}'"
     query = {"$where": where, "$order": "report_date_as_yyyy_mm_dd DESC", "$limit": args.limit}
     source_url = f"https://publicreporting.cftc.gov/resource/{args.dataset_id}.json?{urlencode(query)}"
@@ -539,6 +794,14 @@ def provider_request(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_provider(args: argparse.Namespace) -> dict[str, Any]:
+    registry_entry(args)
+    if args.kind == "price":
+        if not args.currency or not args.session or args.maximum_age_seconds is None:
+            raise AcquisitionError(
+                "price provider requests require currency, session, and maximum_age_seconds"
+            )
+        if args.maximum_age_seconds < 0:
+            raise AcquisitionError("maximum_age_seconds must be nonnegative")
     request_payload = provider_request(args)
     if args.input_file:
         raw = read_limited_file(args.input_file)
@@ -570,8 +833,9 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
     if data.get("request_id") != args.request_id:
         raise AcquisitionError("provider request_id mismatch")
     provider_instrument = data.get("instrument")
-    if not isinstance(provider_instrument, dict) or provider_instrument.get("id") != args.instrument_id:
-        raise AcquisitionError("provider instrument identity mismatch")
+    expected_instrument = request_payload["instrument"]
+    if not isinstance(provider_instrument, dict) or provider_instrument != expected_instrument:
+        raise AcquisitionError("provider instrument identity mismatch across ID, symbol, venue, or asset class")
     provider_errors = data.get("errors")
     if data.get("complete") is not True or not isinstance(provider_errors, list) or provider_errors:
         raise AcquisitionError("provider response is partial or contains errors")
@@ -595,6 +859,22 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
                 raise AcquisitionError(f"provider price observation {index} lacks session")
             if not item.get("currency"):
                 raise AcquisitionError(f"provider price observation {index} lacks currency")
+            if item.get("currency") != args.currency:
+                raise AcquisitionError(f"provider price observation {index} currency mismatch")
+            if item.get("session") != args.session:
+                raise AcquisitionError(f"provider price observation {index} session mismatch")
+            if not nonempty_string(item.get("adjustment")):
+                raise AcquisitionError(f"provider price observation {index} lacks adjustment state")
+            cutoff = parse_datetime(args.decision_cutoff, "decision_cutoff")
+            as_of = parse_datetime(item.get("as_of"), f"provider observation {index} as_of")
+            age_seconds = (cutoff - as_of).total_seconds()
+            if age_seconds < 0:
+                raise AcquisitionError(f"provider price observation {index} is after the decision cutoff")
+            if age_seconds > args.maximum_age_seconds:
+                raise AcquisitionError(
+                    f"provider price observation {index} is stale: {age_seconds:.0f}s exceeds "
+                    f"maximum_age_seconds={args.maximum_age_seconds}"
+                )
         if args.kind == "news":
             news_fields = ("publisher", "canonical_url", "correction_status")
             if any(not item.get(field) for field in news_fields):
@@ -658,6 +938,8 @@ def add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--user-agent", default="")
     parser.add_argument("--timeout", type=float, default=20.0)
     parser.add_argument("--retries", type=int, default=2)
+    parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    parser.add_argument("--registry-key")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -703,6 +985,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = commands.add_parser("validate", help="validate an existing evidence packet")
     validate.add_argument("packet", type=Path)
+    validate.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    validate.add_argument("--registry-key")
     return parser
 
 
@@ -712,8 +996,10 @@ def main() -> int:
         if args.adapter == "validate":
             packet = json.loads(args.packet.read_text(encoding="utf-8"))
             errors = validate_packet(packet)
+            if isinstance(packet, dict):
+                errors.extend(validate_packet_registry(packet, args.registry, args.registry_key))
             if errors:
-                for error in errors:
+                for error in sorted(set(errors)):
                     print(f"FAIL {error}", file=sys.stderr)
                 return 1
             print(f"PASS {packet['packet_id']}")
@@ -728,6 +1014,14 @@ def main() -> int:
             for error in packet["quality"]["errors"]:
                 print(f"FAIL {error}", file=sys.stderr)
             return 2
+        validation_errors = validate_packet(packet)
+        validation_errors.extend(
+            validate_packet_registry(packet, args.registry, args.registry_key)
+        )
+        if validation_errors:
+            for error in sorted(set(validation_errors)):
+                print(f"FAIL {error}", file=sys.stderr)
+            return 1
         return 0
     except (AcquisitionError, OSError, json.JSONDecodeError) as error:
         print(f"FAIL {error}", file=sys.stderr)

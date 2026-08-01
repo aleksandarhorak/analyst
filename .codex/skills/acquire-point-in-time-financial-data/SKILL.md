@@ -15,13 +15,18 @@ provider process, not arguments, packets, logs, fixtures, or repository files.
 Read [the evidence-packet schema](references/evidence-packet-v1.schema.json) when
 creating or validating packets. Read [the provider contract](references/provider-contract.md)
 before connecting price or news services.
+Use [the versioned instrument registry](references/instrument-registry-v1.json)
+as the identity allowlist. An unresolved registry entry is an explicit stop, not
+permission to infer an instrument from ticker similarity.
 
 ## Procedure
 
 1. Set a UTC decision cutoff and state the required claim, instrument, venue,
    share class or contract, currency, field, frequency, and latency.
-2. Resolve a stable identifier. Do not map a broker alias, index, spot reference,
-   fund, future, CFD, ADR, or share class by ticker similarity.
+2. Resolve a stable identifier in `instrument-registry-v1`. Reconcile ID,
+   symbol, venue, asset class, and source-specific identifier. Do not map a
+   broker alias, index, spot reference, fund, future, CFD, ADR, or share class
+   by ticker similarity.
 3. Select the primary source. Prefer SEC for filings/XBRL, ALFRED real-time
    periods for historical macro vintages, CFTC PRE for COT positioning, an
    exchange for contract/settlement facts, and an authorized provider for price
@@ -32,7 +37,9 @@ before connecting price or news services.
 5. Preserve the raw SHA-256, source URL without secrets, access time, event/as-of
    time, first-known or publication time, revision identifiers, units, currency,
    classification, and rights note.
-6. Validate the output. Treat `quality.status=fail`, identifier mismatch,
+6. Validate the output. Validation enforces the full dependency-free packet
+   contract and registry identity. Treat `quality.status=fail`, any identity
+   field mismatch,
    after-cutoff evidence, missing decisive timestamps, ambiguous units,
    truncation, partial response, or provider error as unavailable evidence.
 7. Hand passing packets to `verify-financial-evidence`. Preserve conflicts as
@@ -40,15 +47,17 @@ before connecting price or news services.
 
 ## Adapter Rules
 
-- SEC: use zero-padded CIK and explicit taxonomy, concept, and reported unit;
-  preserve accession, form, filing date, period, frame, and raw unit.
+- SEC: reconcile response CIK and issuer name to the registry, use explicit
+  taxonomy, concept, and reported unit, and preserve accession, form, filing
+  date, period, frame, and raw unit.
 - FRED/ALFRED: request explicit `realtime_start` and `realtime_end`; preserve
   each observation's real-time interval and do not substitute today's revision.
 - CFTC: use the official dataset and contract-market code; preserve report date
   separately from a verified publication time and state classification limits.
-- Price/news provider: require `provider-response-v1`, exact instrument identity,
-  session/latency semantics, timestamps, entitlement/redistribution note, and a
-  complete/error indicator. Reject mismatched or partial responses.
+- Price/news provider: require `provider-response-v1`, exact ID/symbol/venue/
+  asset-class identity, session/latency/adjustment semantics, requested currency,
+  maximum age, timestamps, entitlement/redistribution note, and a complete/error
+  indicator. Reject stale, mismatched, or partial responses.
 
 ## Output
 

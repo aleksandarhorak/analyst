@@ -39,10 +39,13 @@ oversight. These differences cannot be safely flattened into a price plus URL.
 ## Recommended Choice
 
 Choose option 3. Establish `evidence-packet-v1` as the acquisition boundary;
-validate it before analysis. Implement SEC, FRED/ALFRED, and CFTC adapters over
-official HTTPS APIs. Define a provider-neutral stdin/stdout contract for price
-and news adapters so licensed services can be connected without repository
-secrets. Fail closed on unresolved identity, absent timestamps, ambiguous units,
+validate its complete contract before analysis. Bind acquisition to a versioned
+instrument registry seeded from current official identity data, while retaining
+explicit unresolved states for broker, commodity, and index aliases. Implement
+SEC, FRED/ALFRED, and CFTC adapters over official HTTPS APIs. Define a
+provider-neutral stdin/stdout contract for price and news adapters so licensed
+services can be connected without repository secrets. Fail closed on unresolved
+or inconsistent identity, absent timestamps, ambiguous cutoff-day dates or units,
 partial responses, stale decisive data, or unsupported provider semantics.
 
 Add separate append-only forecast and outcome ledgers, deterministic Brier/log
@@ -85,7 +88,8 @@ adds a second audit layer.
 
 - Add four repo skills: acquisition, forecast calibration, commodity/futures
   analysis, and client-data governance.
-- Add schemas, an instrument registry, standard-library adapters, deterministic
+- Add schemas, an official-source-seeded versioned instrument registry,
+  standard-library adapters, deterministic
   fixtures/tests, evaluation/calibration/history scripts, and quality gates.
 - Strengthen evidence, watchlist, valuation, suitability, macro, fundamental,
   risk, and evaluation skills to consume shared contracts.
@@ -96,7 +100,8 @@ adds a second audit layer.
 
 - Validate schemas and every skill folder.
 - Replay SEC, FRED, CFTC, price, and news fixtures without network access.
-- Test stale data, revisions, units, aliases, partial/rate-limit errors, futures
+- Test stale data, complete identity, revisions, units, aliases,
+  partial/rate-limit errors, futures
   lag/settlement, PII leakage, exact probability scoring, immutable overwrite,
   and migration preservation.
 - Run syntax checks, focused test suites, stage gates, and the final repository

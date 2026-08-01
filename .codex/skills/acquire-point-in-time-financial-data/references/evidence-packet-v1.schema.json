@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/analyst/evidence-packet-v1.schema.json",
+  "$id": "urn:analyst:evidence-packet-v1",
   "title": "Evidence Packet v1",
   "type": "object",
   "additionalProperties": false,

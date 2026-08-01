@@ -14,8 +14,8 @@ temporary notes.
 - [x] Plan implementation stages and verification commands.
 - [x] Remove evaluation-answer leakage and add complete regression metadata.
 - [x] Expand public adverse cases across every analytical and safety lane.
-- [ ] Add a versioned instrument registry and validate all adapter identities.
-- [ ] Enforce evidence schema, freshness, session, currency, and timestamp rules.
+- [x] Add a versioned instrument registry and validate all adapter identities.
+- [x] Enforce evidence schema, freshness, session, currency, and timestamp rules.
 - [ ] Correct forecast-ledger integrity wording or implement the documented chain.
 - [ ] Expand client-data leak detection and synthetic self-tests.
 - [ ] Run focused validators and the stage quality gate after each implementation stage.
