@@ -13,7 +13,7 @@ Request:
 {
   "schema_version": "provider-request-v1",
   "request_id": "stable-id",
-  "kind": "price-or-news",
+  "kind": "price",
   "decision_cutoff": "2026-08-01T12:00:00Z",
   "instrument": {
     "id": "provider:venue:security-id",
@@ -73,7 +73,7 @@ Response:
   currency, session, and latency (`real_time`, `delayed`, `prior_close`,
   `settlement`, or `indicative`).
 - Corporate-action adjustment state must be explicit for historical prices.
-- News needs original publisher, canonical URL, publication/update times,
+- A `news` request needs original publisher, canonical URL, publication/update times,
   headline/document identity, and correction/retraction state. A search snippet
   is not an observation.
 - The provider name and rights note are mandatory. Store only what the license

@@ -28,6 +28,7 @@ required_skills=(
   value-company-and-forecast
   calibrate-financial-forecasts
   analyze-macroeconomy
+  analyze-commodities-and-futures
   analyze-news-catalysts
   analyze-market-behavior
   research-symbol-watchlist
@@ -35,6 +36,7 @@ required_skills=(
   manage-portfolio-risk
   build-investment-thesis
   check-broker-suitability
+  govern-client-data
   evaluate-financial-agent
 )
 
@@ -188,6 +190,12 @@ if python3 scripts/test-forecast-calibration.py; then
   pass 'forecast ledger and calibration regressions'
 else
   fail 'forecast ledger and calibration regressions failed'
+fi
+
+if python3 scripts/check-client-data.py --self-test; then
+  pass 'client-data governance and leak check'
+else
+  fail 'client-data governance and leak check failed'
 fi
 
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do

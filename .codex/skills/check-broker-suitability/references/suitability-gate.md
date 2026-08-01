@@ -5,10 +5,12 @@
 - Jurisdiction, rule source/as-of date, capacity, firm, account, client type:
 - Product and transaction or strategy:
 - Required qualified reviewer:
+- Client-data gate outcome/expiry and redacted profile ID:
+- Approved client system; no real client facts stored in this document:
 
 ## Client Profile
 
-| Factor | Verified fact | Source/date | Missing or uncertain? |
+| Factor | Redacted/derived decision fact | Secure source reference/date | Missing or uncertain? |
 | --- | --- | --- | --- |
 | Objectives/horizon | | | |
 | Income/assets/debts/tax | | | |
@@ -17,6 +19,9 @@
 | Risk tolerance/capacity | | | |
 | Holdings/concentration | | | |
 | Other constraints | | | |
+
+Keep real underlying values in the approved client system. A repository copy of
+this template must contain only synthetic data or non-identifying categories.
 
 ## Product And Alternatives
 

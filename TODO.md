@@ -16,8 +16,8 @@ temporary notes.
 - [x] Add an executable financial-agent evaluation runner and regression cases.
 - [x] Add forecast registration, outcome resolution, and calibration scoring.
 - [x] Enforce immutable symbol-research history and versioned migrations.
-- [ ] Add commodity/futures analysis and client-data governance skills.
-- [ ] Integrate the new controls into existing skills, templates, and policy.
+- [x] Add commodity/futures analysis and client-data governance skills.
+- [x] Integrate the new controls into existing skills, templates, and policy.
 - [ ] Run focused tests, all skill validators, and the full quality gate.
 - [ ] Reset this file, review the final diff, and merge passing work into `dev`.
 

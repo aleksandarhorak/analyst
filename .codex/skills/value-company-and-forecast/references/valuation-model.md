@@ -6,6 +6,8 @@
 - As-of price/time, currency, horizon:
 - Capital structure and diluted shares:
 - Source vintage and accounting basis:
+- Sector branch(es) and why selected:
+- Evidence packet IDs and method version:
 
 ## Driver Forecast
 
@@ -38,3 +40,4 @@ including discount rate and terminal assumptions when applicable.
 - Catalysts and monitoring:
 - Disconfirmers and invalidation:
 - Confidence and model limitations:
+- Registered forecast IDs when probabilities are published:

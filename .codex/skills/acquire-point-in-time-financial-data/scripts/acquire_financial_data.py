@@ -557,11 +557,19 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
         }
         if not isinstance(item, dict) or (missing := required - item.keys()):
             raise AcquisitionError(f"provider observation {index} missing fields: {sorted(missing)}")
-        if args.kind == "price-or-news" and item["field"] in {"last_trade", "bid", "ask", "close", "settlement"}:
+        if args.kind == "price":
             if item.get("latency") not in {"real_time", "delayed", "prior_close", "settlement", "indicative"}:
                 raise AcquisitionError(f"provider price observation {index} lacks valid latency")
             if not item.get("session"):
                 raise AcquisitionError(f"provider price observation {index} lacks session")
+            if not item.get("currency"):
+                raise AcquisitionError(f"provider price observation {index} lacks currency")
+        if args.kind == "news":
+            news_fields = ("publisher", "canonical_url", "correction_status")
+            if any(not item.get(field) for field in news_fields):
+                raise AcquisitionError(
+                    f"provider news observation {index} lacks publisher, canonical URL, or correction status"
+                )
         records.append(
             observation(
                 claim_id=f"provider:{args.request_id}:{index}:{item['field']}",
@@ -655,7 +663,7 @@ def build_parser() -> argparse.ArgumentParser:
     provider = commands.add_parser("provider", help="acquire an authorized provider response")
     add_common(provider)
     provider.add_argument("--request-id", required=True)
-    provider.add_argument("--kind", choices=("price-or-news",), default="price-or-news")
+    provider.add_argument("--kind", choices=("price", "news"), required=True)
     provider.add_argument("--currency")
     provider.add_argument("--session")
     provider.add_argument("--maximum-age-seconds", type=int)

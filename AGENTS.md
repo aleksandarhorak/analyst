@@ -52,6 +52,10 @@ planning or acting.
   thesis.
 - `check-broker-suitability`: client profile, alternatives, costs, conflicts,
   and jurisdiction-sensitive recommendation gates.
+- `govern-client-data`: authorize, minimize, secure, retain, correct, and delete
+  real client facts before personalized workflows handle them.
+- `analyze-commodities-and-futures`: exact commodity/futures product, physical
+  balance, curve/basis, roll, positioning, settlement, margin, and delivery.
 - `evaluate-financial-agent`: regression-test analytical quality and safety.
 
 The root policy owns non-negotiable conduct. Skills own detailed procedures;
@@ -187,6 +191,12 @@ second-order transmission, test materiality, and distinguish a temporary flow
 effect from a change in long-run cash flows or discount rates. Generic sentiment
 classification does not establish economic value.
 
+For commodities or futures, use `analyze-commodities-and-futures`. Resolve the
+exact product and month, native unit, contract multiplier, settlement, delivery,
+continuous-series/roll construction, and broker margin terms. Separate physical
+stocks/flows, curve and basis, weekly positioning lag, and daily mark-to-market;
+never treat a generic alias, cash index, future, fund, and CFD as interchangeable.
+
 ## 5. Thesis, Portfolio, And Risk
 
 Keep three decisions separate:
@@ -212,7 +222,12 @@ Before a personalized recommendation, establish the current jurisdiction,
 legal capacity, client type, product, and applicable rules from primary current
 sources. Legal and compliance conclusions require qualified human review.
 
-The client profile must include, as applicable: age, dependants, income, assets,
+Before collecting or using real client facts, use `govern-client-data`. Never store real client identity, finances, portfolio/account details, tax data, or
+communications in this repository, Git history, memory/TODO files, symbol or
+forecast records, evaluation fixtures, copied prompts, logs, or artifacts. Use an approved secure client system with least necessary fields, redacted
+references, defined retention/deletion, and synthetic repository tests.
+
+The securely held client profile must include, as applicable: age, dependants, income, assets,
 debts, tax status, objectives, horizon, liquidity needs, experience, knowledge,
 risk tolerance, risk capacity, concentration, existing holdings, and other
 constraints. Never invent missing profile facts. If material facts are absent,

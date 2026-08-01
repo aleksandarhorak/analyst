@@ -163,6 +163,7 @@ def main() -> int:
                 "--input-file", str(FIXTURES / "provider_price.json"),
                 "--output", str(provider_path),
                 "--request-id", "price-aapl-20250801",
+                "--kind", "price",
                 "--currency", "USD",
                 "--session", "regular",
                 "--maximum-age-seconds", "60",
@@ -171,6 +172,25 @@ def main() -> int:
         provider = read(provider_path)
         assert provider["observations"][0]["metadata"]["latency"] == "real_time"
         assert "api_key" not in json.dumps(provider).lower()
+
+        news_path = output / "news.json"
+        run(
+            [
+                "provider",
+                "--instrument-id", "figi:BBG000B9XRY4",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *COMMON,
+                "--input-file", str(FIXTURES / "provider_news.json"),
+                "--output", str(news_path),
+                "--request-id", "news-aapl-20250801",
+                "--kind", "news",
+            ]
+        )
+        news = read(news_path)
+        assert news["observations"][0]["metadata"]["publisher"] == "Synthetic Wire"
+        assert news["observations"][0]["metadata"]["correction_status"] == "original"
 
         wrong_identity = run(
             [
@@ -181,6 +201,7 @@ def main() -> int:
                 *COMMON,
                 "--input-file", str(FIXTURES / "provider_price.json"),
                 "--request-id", "price-aapl-20250801",
+                "--kind", "price",
             ],
             expected=1,
         )

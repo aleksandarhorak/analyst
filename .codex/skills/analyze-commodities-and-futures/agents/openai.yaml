@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Commodities and Futures"
+  short_description: "Analyze physical drivers and futures mechanics"
+  default_prompt: "Use $analyze-commodities-and-futures to analyze this exact commodity or futures exposure and its contract risks."

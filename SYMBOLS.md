@@ -29,6 +29,9 @@ Last universe review: `2026-07-31T23:30:47+01:00`.
    releases, news, estimates, or macroeconomic data.
 4. Use the relevant company, valuation, macro, news, market-behavior, portfolio,
    suitability, and execution skills before changing a status.
+   For commodities or any futures-based index exposure, also use
+   `analyze-commodities-and-futures` and preserve the exact contract/product,
+   settlement, curve, roll, margin, and delivery terms.
 5. Write an immutable batch snapshot under
    `research/symbols/<SYMBOL>/history/`, update `LATEST.md`, and append the
    decision to `DECISIONS.md`. Never delete the folder when a symbol is archived.

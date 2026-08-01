@@ -34,9 +34,11 @@ the templates in `assets/` and the synchronization helper in `scripts/`.
    verify material events, publication/event times, novelty, prior expectation,
    observed response, and fundamental transmission. If none is found, record
    sources and the searched window rather than inventing a catalyst.
-5. Add relevant company fundamentals and valuation for stocks, macro and
-   supply/demand drivers for commodities and indices, and broader market regime.
-   Reuse current verified research; do not rebuild a full model from headlines.
+5. Add relevant company fundamentals and valuation for stocks and the broader
+   market regime. For commodities and any futures-based index product, use
+   `analyze-commodities-and-futures` for physical drivers, curve/basis, roll,
+   positioning lag, contract, settlement, margin, and delivery. Reuse current
+   verified research; do not rebuild a full model from headlines.
 6. Use `analyze-market-behavior` only with observable, participant- and
    horizon-specific evidence. Record alternatives and a falsifier.
 7. Estimate the four required horizons: 1 trading day, 2 weeks, 1 month, and 2

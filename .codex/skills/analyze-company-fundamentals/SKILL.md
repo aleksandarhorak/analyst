@@ -9,7 +9,10 @@ description: Analyze a company's business quality, industry position, financial 
 
 Establish the company and security identifiers, reporting currency, fiscal
 calendar, analysis horizon, as-of date, peer set, and available filings. Use
+`acquire-point-in-time-financial-data` for supported SEC facts/filings and
 `verify-financial-evidence` when sources or timing are not already controlled.
+Preserve CIK, accession, taxonomy, concept, unit, fiscal context, packet ID, and
+raw hash; do not treat a normalized vendor label as a reconciled statement.
 
 ## Procedure
 
