@@ -29,8 +29,8 @@
 
 ## Batch Completion Ledger
 
-| Symbol | Research state | Identity | Fundamentals/product | Valuation/scenarios | Thesis | Forecast | Downside/5x |
-|---|---|---|---|---|---|---|---|
+| Symbol | Research state | Identity | Price | Fundamentals/product | Valuation/scenarios | News | Macro | Behavior | Thesis | Forecast | Downside/5x | Monitoring |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
 {{COMPLETION_ROWS}}
 
 ## Shared Macro Regime
@@ -50,7 +50,7 @@ Cells are `up/flat/down`; each populated cell totals 100%. Horizons are 1
 trading day, 2 weeks, 1 month, and 2 months. Bands, forecast IDs, calibration,
 and abstention reasons are in the linked detail file.
 
-| Symbol | 1 trading day | 2 weeks | 1 month | 2 months | Confidence |
+| Symbol | 1 trading day | 2 weeks | 1 month | 2 months | Confidence by horizon |
 |---|---:|---:|---:|---:|---|
 {{PROBABILITY_ROWS}}
 

@@ -56,11 +56,23 @@
     "usd_value": null,
     "price_evidence_id": null,
     "fx_evidence_id": null,
+    "fx_rate_usd_per_native_unit": null,
+    "fx_observed_at": null,
     "reason_code": null
   },
   "analysis_depth": {
-    "fundamentals_product": {"reconciliation_ids": [], "drivers": [], "limitations": null},
-    "valuation_scenarios": {"methods": [], "base": null, "bull": null, "bear": null, "sensitivity": null},
+    "fundamentals_product": {
+      "analysis_type": null,
+      "equity": null,
+      "commodity_future": null,
+      "other_product": null
+    },
+    "valuation_scenarios": {
+      "methods": [],
+      "scenarios": {"base": null, "bull": null, "bear": null},
+      "enterprise_to_equity": null,
+      "sensitivities": []
+    },
     "news_catalysts": {"window_start": null, "window_end": null, "expectation_basis": null},
     "macro_transmission": {"shared_evidence_ids": [], "channels": [], "instrument_effect": null},
     "market_behavior": {"observations": [], "alternatives": [], "falsifier": null},
@@ -68,7 +80,7 @@
     "monitoring": {"signals": [], "next_review": null}
   },
   "forecasts": [],
-  "risk": {"status": "not_started", "reference_capital_usd": null, "underlying_downside_return": null, "unlevered_pnl_usd": null, "gross_5x_pnl_usd": null, "reason_code": null},
+  "risk": {"status": "not_started", "reference_capital_usd": null, "underlying_downside_return": null, "unlevered_pnl_usd": null, "gross_5x_pnl_usd": null, "liquidity_status": null, "costs_summary": null, "margin_liquidation_summary": null, "reason_code": null},
   "unblockers": []
 }
 ```

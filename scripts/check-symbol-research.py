@@ -26,6 +26,7 @@ from symbol_research_contract import (  # noqa: E402
     parse_time,
     validate_latest_v3,
 )
+from sync_symbol_research import parse_active_universe  # noqa: E402
 
 
 REQUIRED_FIXTURES = {
@@ -42,6 +43,12 @@ REQUIRED_FIXTURES = {
     "missing_price_metadata",
     "premature_snapshot",
     "terminal_checkpoint_correction",
+    "shallow_asset_depth",
+    "incomplete_forecast_registration",
+    "fx_conversion_mismatch",
+    "partial_completion_ledger",
+    "asset_class_spoof",
+    "broad_abstention_complete",
 }
 SYMBOL_PATTERN = re.compile(r"^\|\s*`([A-Z0-9._-]+)`\s*\|")
 PROBABILITY_PATTERN = re.compile(r"^(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)$")
@@ -51,14 +58,7 @@ LATEST_V3 = "<!-- analyst-template: latest-v3 -->"
 DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
 REPORT_V2 = "<!-- analyst-template: report-v2 -->"
 REPORT_V3 = "<!-- analyst-template: report-v3 -->"
-COMPLETION_LANES = (
-    "identity_evidence",
-    "fundamentals_product",
-    "valuation_scenarios",
-    "investment_thesis",
-    "directional_forecast",
-    "downside_leverage",
-)
+COMPLETION_LANES = REQUIRED_LANES
 
 
 def fail(message: str, failures: list[str]) -> None:
@@ -154,9 +154,13 @@ def check_latest_probability_display(text: str, symbol: str, state: dict[str, An
                 fail(f"{symbol} {horizon}: Markdown row does not reconcile with registered forecast", failures)
         elif cells[3:6] != ["—", "—", "—"]:
             fail(f"{symbol} {horizon}: abstained/blocked forecast must display em dashes", failures)
+        if cells[7] != forecast.get("confidence"):
+            fail(f"{symbol} {horizon}: Markdown confidence does not reconcile with forecast state", failures)
 
 
-def check_latest(path: Path, symbol: str, failures: list[str]) -> dict[str, Any] | None:
+def check_latest(
+    path: Path, symbol: str, expected_asset_class: str, failures: list[str]
+) -> dict[str, Any] | None:
     text = path.read_text(encoding="utf-8")
     if LATEST_V2 in text:
         for phrase in (
@@ -179,9 +183,13 @@ def check_latest(path: Path, symbol: str, failures: list[str]) -> dict[str, Any]
         fail(f"{symbol}/LATEST.md has no recognized template marker", failures)
         return None
     try:
-        provisional = validate_latest_v3(text, symbol, require_terminal=False)
+        provisional = validate_latest_v3(
+            text, symbol, expected_asset_class=expected_asset_class, require_terminal=False
+        )
         terminal = provisional.get("research_status") != "not_started"
-        state = validate_latest_v3(text, symbol, require_terminal=terminal)
+        state = validate_latest_v3(
+            text, symbol, expected_asset_class=expected_asset_class, require_terminal=terminal
+        )
         if terminal:
             check_latest_probability_display(text, symbol, state, failures)
         return state
@@ -190,7 +198,12 @@ def check_latest(path: Path, symbol: str, failures: list[str]) -> dict[str, Any]
         return None
 
 
-def check_symbol_tree(repo_root: Path, symbols: list[str], failures: list[str]) -> dict[str, dict[str, Any] | None]:
+def check_symbol_tree(
+    repo_root: Path,
+    symbols: list[str],
+    asset_classes: dict[str, str],
+    failures: list[str],
+) -> dict[str, dict[str, Any] | None]:
     states: dict[str, dict[str, Any] | None] = {}
     root = repo_root / "research" / "symbols"
     for symbol in symbols:
@@ -202,7 +215,7 @@ def check_symbol_tree(repo_root: Path, symbols: list[str], failures: list[str]) 
             fail(f"missing {symbol}/LATEST.md", failures)
             states[symbol] = None
         else:
-            states[symbol] = check_latest(latest, symbol, failures)
+            states[symbol] = check_latest(latest, symbol, asset_classes[symbol], failures)
         if not decisions.is_file() or any(
             phrase not in decisions.read_text(encoding="utf-8")
             for phrase in ("append-only", DECISIONS_MARKER)
@@ -238,6 +251,9 @@ def check_report_probability_cells(report: str, states: dict[str, dict[str, Any]
                 expected = "/".join(display_number(forecast[name]) for name in ("up", "flat", "down"))
             if value != expected:
                 fail(f"REPORT.md {symbol} {horizon}: value does not reconcile with LATEST.md", failures)
+        expected_confidence = "/".join(forecast.get("confidence", "missing") for forecast in forecasts)
+        if cells[5] != expected_confidence:
+            fail(f"REPORT.md {symbol}: confidence does not reconcile with LATEST.md", failures)
 
 
 def parse_plain_number(value: str) -> float | None:
@@ -267,6 +283,8 @@ def check_report_risk_cells(report: str, states: dict[str, dict[str, Any] | None
                 fail(f"REPORT.md {symbol}: risk values do not reconcile with LATEST.md", failures)
         elif cells[1:4] != ["—", "—", "—"]:
             fail(f"REPORT.md {symbol}: non-complete risk must display em dashes", failures)
+        if cells[4] != risk.get("margin_liquidation_summary"):
+            fail(f"REPORT.md {symbol}: margin/liquidation status does not reconcile with LATEST.md", failures)
 
 
 def check_report_summary_cells(report: str, states: dict[str, dict[str, Any] | None], failures: list[str]) -> None:
@@ -389,7 +407,7 @@ def check_report_v3(
             fail("REPORT.md text access completion does not reconcile", failures)
     except (RuntimeError, ValueError) as error:
         fail(f"REPORT.md completion timestamp is invalid: {error}", failures)
-    completion = table_rows(report, "Batch Completion Ledger", 8)
+    completion = table_rows(report, "Batch Completion Ledger", len(COMPLETION_LANES) + 2)
     if list(completion) != symbols:
         fail("REPORT.md completion ledger coverage is incomplete or misordered", failures)
     for symbol, row in completion.items():
@@ -476,8 +494,10 @@ def main() -> int:
     failures: list[str] = []
     symbols: list[str] = []
     try:
-        symbols = active_symbols(repo_root / "SYMBOLS.md")
-        states = check_symbol_tree(repo_root, symbols, failures)
+        records = parse_active_universe(repo_root / "SYMBOLS.md")
+        symbols = [record.symbol for record in records]
+        asset_classes = {record.symbol: record.asset_class for record in records}
+        states = check_symbol_tree(repo_root, symbols, asset_classes, failures)
         check_report(repo_root, symbols, states, failures)
         check_fixtures(repo_root, failures)
     except (OSError, ValueError, json.JSONDecodeError) as error:

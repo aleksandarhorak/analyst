@@ -10,6 +10,8 @@ from pathlib import Path
 import re
 import sys
 
+from symbol_research_contract import REQUIRED_LANES
+
 
 @dataclass(frozen=True)
 class SymbolRecord:
@@ -92,8 +94,7 @@ def initialize_report(repo_root: Path, records: list[SymbolRecord], template: st
         probability_rows.append(f"| `{record.symbol}` | — | — | — | — | Insufficient |")
         risk_rows.append(f"| `{record.symbol}` | — | — | — | Not researched |")
         completion_rows.append(
-            f"| `{record.symbol}` | not_started | not_started | not_started | "
-            "not_started | not_started | not_started | not_started |"
+            f"| `{record.symbol}` | " + " | ".join(["not_started"] * (len(REQUIRED_LANES) + 1)) + " |"
         )
     state = {
         "schema_version": "symbol-research-report-state-v1",

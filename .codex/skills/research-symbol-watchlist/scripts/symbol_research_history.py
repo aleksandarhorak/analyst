@@ -16,6 +16,7 @@ from typing import Any
 
 from symbol_research_batch import validate_run
 from symbol_research_contract import REQUIRED_LANES, validate_latest_v3
+from sync_symbol_research import parse_active_universe
 
 
 SYMBOL_PATTERN = re.compile(r"^[A-Z0-9._-]+$")
@@ -138,8 +139,19 @@ def snapshot(args: argparse.Namespace) -> int:
     if recorded_time < cutoff_time:
         raise HistoryError("recorded_at cannot precede decision_cutoff")
     draft = args.draft.read_text(encoding="utf-8")
+    universe = {
+        record.symbol: record
+        for record in parse_active_universe(args.repo_root.resolve() / "SYMBOLS.md")
+    }
+    if args.symbol not in universe:
+        raise HistoryError("symbol is not in the active universe")
     try:
-        state = validate_latest_v3(draft, args.symbol, require_terminal=True)
+        state = validate_latest_v3(
+            draft,
+            args.symbol,
+            expected_asset_class=universe[args.symbol].asset_class,
+            require_terminal=True,
+        )
     except RuntimeError as error:
         raise HistoryError(f"draft fails latest-v3 full-depth validation: {error}") from error
     if state["batch_id"] != args.batch_id or parse_time(state["decision_cutoff"], "state decision_cutoff") != cutoff_time:
@@ -153,6 +165,12 @@ def snapshot(args: argparse.Namespace) -> int:
         raise HistoryError(f"batch checkpoint is invalid: {'; '.join(checkpoint_failures)}")
     if checkpoint.get("batch_id") != args.batch_id or checkpoint.get("decision_cutoff") != state["decision_cutoff"]:
         raise HistoryError("batch checkpoint ID or cutoff does not match draft")
+    frozen = next(
+        (record for record in checkpoint.get("active_universe", []) if record.get("symbol") == args.symbol),
+        None,
+    )
+    if not frozen or frozen.get("asset_class") != state["asset_class"]:
+        raise HistoryError("draft asset class does not match the frozen batch universe")
     shared_stages = checkpoint.get("shared_stages", {})
     for stage in ("identity_registry", "provider_preflight", "macro_regime"):
         if shared_stages.get(stage, {}).get("status") not in {"complete", "blocked"}:

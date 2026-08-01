@@ -81,9 +81,15 @@ secrets, or copied research here.
   ledgers, shared-stage artifacts, and hash-chained pre-snapshot corrections
   make interrupted work resumable. New live outputs use structured
   `latest-v3`/`report-v3` state, price/session/unit fields, analytical-depth
-  fields, central reconciliation before snapshot, and terminal lane validation;
-  immutable v2 artifacts remain valid history and are never rewritten only to
-  change versions.
+  fields, numeric asset-specific reconciliation and valuation schemas,
+  evidence-linked forecast registrations, FX arithmetic, central reconciliation
+  before snapshot, and terminal lane validation. `RUN.json` binds the current
+  correction-chain head and freezes ordered instrument and asset-class metadata
+  so drafts cannot select weaker schemas; prepare-before-apply records support
+  exact recovery after interruption. Core-lane abstention produces a `partial`,
+  never `complete`, batch, while justified behavior or forecast abstention can
+  coexist with completion. Immutable v2 artifacts remain valid history and are
+  never rewritten only to change versions.
 - Standard symbol horizons are 1 trading day, 2 weeks, 1 month, and 2 months.
   Each uses an explicit unlevered flat band and either up/flat/down
   probabilities totaling 100% or `insufficient evidence`. Reports use USD and

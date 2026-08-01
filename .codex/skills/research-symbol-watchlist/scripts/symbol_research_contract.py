@@ -26,6 +26,17 @@ REQUIRED_LANES = (
     "downside_leverage",
     "monitoring",
 )
+COMPLETION_REQUIRED_LANES = (
+    "identity_evidence",
+    "price_market",
+    "fundamentals_product",
+    "valuation_scenarios",
+    "news_catalysts",
+    "macro_transmission",
+    "investment_thesis",
+    "downside_leverage",
+    "monitoring",
+)
 LANE_LABELS = {
     "identity_evidence": "Identity and point-in-time evidence",
     "price_market": "Price and market data",
@@ -131,6 +142,12 @@ def _nonempty(value: Any, field: str, minimum: int = 1) -> str:
     if not isinstance(value, str) or len(value.strip()) < minimum:
         raise ContractError(f"{field} must contain at least {minimum} characters")
     return value.strip()
+
+
+def _finite(value: Any, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ContractError(f"{field} must be a finite number")
+    return float(value)
 
 
 def _nullable_reason(value: Any, field: str) -> None:
@@ -249,11 +266,24 @@ def _validate_price_observation(
     _nullable_reason(reason, "price_observation.reason_code")
     price_lane = state["lanes"]["price_market"]["status"]
     numeric = ("native_value", "usd_value")
-    descriptive = ("native_currency", "units", "observed_at", "market_session", "price_policy", "price_evidence_id")
+    descriptive = (
+        "native_currency",
+        "units",
+        "observed_at",
+        "market_session",
+        "price_policy",
+        "price_evidence_id",
+        "fx_observed_at",
+    )
     if status == "verified":
         if price_lane != "complete":
             raise ContractError("verified price observation requires a complete price_market lane")
-        if not all(isinstance(price.get(name), (int, float)) and math.isfinite(price[name]) for name in numeric):
+        if not all(
+            not isinstance(price.get(name), bool)
+            and isinstance(price.get(name), (int, float))
+            and math.isfinite(price[name])
+            for name in numeric
+        ):
             raise ContractError("verified price observation requires finite native and USD values")
         currency = price.get("native_currency")
         if not isinstance(currency, str) or not re.fullmatch(r"[A-Z]{3}", currency):
@@ -271,10 +301,25 @@ def _validate_price_observation(
             raise ContractError("verified price must reference cutoff-eligible price evidence")
         fx_id = price.get("fx_evidence_id")
         if currency == "USD":
-            if abs(price["native_value"] - price["usd_value"]) > 0.000001 or fx_id is not None:
+            fx_rate = price.get("fx_rate_usd_per_native_unit")
+            if (
+                abs(price["native_value"] - price["usd_value"]) > 0.000001
+                or fx_id is not None
+                or fx_rate not in {None, 1, 1.0}
+                or price.get("fx_observed_at") is not None
+            ):
                 raise ContractError("USD price must reconcile without an FX evidence ID")
-        elif fx_id not in evidence or not evidence[fx_id].get("cutoff_eligible"):
-            raise ContractError("non-USD price requires cutoff-eligible FX evidence")
+        else:
+            if fx_id not in evidence or not evidence[fx_id].get("cutoff_eligible"):
+                raise ContractError("non-USD price requires cutoff-eligible FX evidence")
+            fx_rate = _finite(price.get("fx_rate_usd_per_native_unit"), "price_observation.fx_rate_usd_per_native_unit")
+            if fx_rate <= 0:
+                raise ContractError("FX rate must be positive USD per native currency unit")
+            fx_observed = parse_time(price.get("fx_observed_at"), "price_observation.fx_observed_at")
+            if fx_observed > cutoff:
+                raise ContractError("FX observation is after the decision cutoff")
+            if abs(price["usd_value"] - price["native_value"] * fx_rate) > 0.000001:
+                raise ContractError("native-to-USD price conversion does not reconcile")
         if reason is not None:
             raise ContractError("verified price observation must not have a reason code")
     elif status in {"unavailable", "not_applicable"}:
@@ -283,7 +328,10 @@ def _validate_price_observation(
             raise ContractError("unavailable/not-applicable price does not reconcile with price_market lane")
         if reason not in REASON_CODES:
             raise ContractError("unavailable/not-applicable price requires a reason code")
-        if any(price.get(name) is not None for name in (*numeric, *descriptive, "fx_evidence_id")):
+        if any(
+            price.get(name) is not None
+            for name in (*numeric, *descriptive, "fx_evidence_id", "fx_rate_usd_per_native_unit")
+        ):
             raise ContractError("unavailable/not-applicable price must not contain observation values")
 
 
@@ -293,6 +341,203 @@ def _string_array(value: Any, field: str, minimum: int = 1) -> list[str]:
     ):
         raise ContractError(f"{field} must contain at least {minimum} substantive string(s)")
     return value
+
+
+def _eligible_evidence_ids(
+    value: Any, field: str, evidence: dict[str, dict[str, Any]], minimum: int = 1
+) -> list[str]:
+    ids = _string_array(value, field, minimum)
+    if any(item not in evidence or not evidence[item].get("cutoff_eligible") for item in ids):
+        raise ContractError(f"{field} references missing or cutoff-ineligible evidence")
+    return ids
+
+
+def _numeric_bridge(value: Any, field: str) -> None:
+    if not isinstance(value, dict):
+        raise ContractError(f"{field} must be a structured numeric bridge")
+    start = _finite(value.get("start"), f"{field}.start")
+    end = _finite(value.get("end"), f"{field}.end")
+    drivers = value.get("drivers")
+    if not isinstance(drivers, list) or not drivers:
+        raise ContractError(f"{field}.drivers must contain numeric bridge components")
+    changes = 0.0
+    for index, driver in enumerate(drivers):
+        if not isinstance(driver, dict):
+            raise ContractError(f"{field}.drivers[{index}] must be an object")
+        _nonempty(driver.get("name"), f"{field}.drivers[{index}].name", 8)
+        changes += _finite(driver.get("change"), f"{field}.drivers[{index}].change")
+    if abs(end - (start + changes)) > 0.01:
+        raise ContractError(f"{field} does not reconcile start plus drivers to end")
+
+
+def _validate_fundamentals_product(
+    item: Any, asset_class: str, evidence: dict[str, dict[str, Any]], cutoff: datetime
+) -> None:
+    if not isinstance(item, dict):
+        raise ContractError("analysis_depth fundamentals_product must be an object")
+    analysis_type = item.get("analysis_type")
+    asset = asset_class.casefold()
+    expected_type = (
+        "equity"
+        if asset in {"stock", "equity"}
+        else "commodity_future"
+        if "commodity" in asset or "future" in asset
+        else "other_product"
+    )
+    if analysis_type != expected_type:
+        raise ContractError(f"fundamentals/product analysis_type must be {expected_type} for {asset_class}")
+    populated = [name for name in ("equity", "commodity_future", "other_product") if item.get(name) is not None]
+    if populated != [expected_type]:
+        raise ContractError("only the applicable asset-specific fundamentals/product schema may be populated")
+    detail = item[expected_type]
+    if not isinstance(detail, dict):
+        raise ContractError(f"{expected_type} analysis must be an object")
+    if expected_type == "equity":
+        _string_array(detail.get("periods"), "equity periods", 2)
+        _eligible_evidence_ids(detail.get("statement_evidence_ids"), "equity statement evidence", evidence, 2)
+        if not isinstance(detail.get("currency"), str) or not re.fullmatch(r"[A-Z]{3}", detail["currency"]):
+            raise ContractError("equity currency must be a three-letter code")
+        _nonempty(detail.get("scale"), "equity scale", 3)
+        _numeric_bridge(detail.get("revenue_bridge"), "equity revenue_bridge")
+        _numeric_bridge(detail.get("margin_bridge"), "equity margin_bridge")
+        cash = detail.get("cash_flow_bridge")
+        if not isinstance(cash, dict):
+            raise ContractError("equity cash_flow_bridge must be an object")
+        operating = _finite(cash.get("operating_cash_flow"), "equity operating_cash_flow")
+        capex = _finite(cash.get("capital_expenditure"), "equity capital_expenditure")
+        free_cash = _finite(cash.get("free_cash_flow"), "equity free_cash_flow")
+        if capex < 0 or abs(free_cash - (operating - capex)) > 0.01:
+            raise ContractError("equity free cash flow does not reconcile to operating cash flow less capex")
+        debt = _finite(detail.get("debt"), "equity debt")
+        cash_value = _finite(detail.get("cash"), "equity cash")
+        net_debt = _finite(detail.get("net_debt"), "equity net_debt")
+        if abs(net_debt - (debt - cash_value)) > 0.01:
+            raise ContractError("equity net debt does not reconcile")
+        basic = _finite(detail.get("basic_shares"), "equity basic_shares")
+        diluted = _finite(detail.get("diluted_shares"), "equity diluted_shares")
+        if basic <= 0 or diluted < basic:
+            raise ContractError("equity diluted shares must be positive and not below basic shares")
+        for field in ("earnings_quality", "liquidity", "capital_allocation", "governance"):
+            _nonempty(detail.get(field), f"equity {field}", 30)
+    elif expected_type == "commodity_future":
+        for field in ("exchange", "contract_month", "native_units", "settlement", "delivery", "roll_method"):
+            _nonempty(detail.get(field), f"commodity/future {field}", 3 if field != "delivery" else 20)
+        multiplier = _finite(detail.get("contract_multiplier"), "commodity/future contract_multiplier")
+        if multiplier <= 0:
+            raise ContractError("commodity/future contract multiplier must be positive")
+        curve = detail.get("curve")
+        if not isinstance(curve, list) or len(curve) < 2:
+            raise ContractError("commodity/future curve requires at least two contract points")
+        for index, point in enumerate(curve):
+            if not isinstance(point, dict):
+                raise ContractError(f"commodity/future curve[{index}] must be an object")
+            _nonempty(point.get("contract"), f"commodity/future curve[{index}].contract", 3)
+            _finite(point.get("price"), f"commodity/future curve[{index}].price")
+            observed = parse_time(point.get("observed_at"), f"commodity/future curve[{index}].observed_at")
+            if observed > cutoff:
+                raise ContractError("commodity/future curve point is after cutoff")
+            _eligible_evidence_ids([point.get("evidence_id")], f"commodity/future curve[{index}] evidence", evidence)
+        spot = _finite(detail.get("spot_value"), "commodity/future spot_value")
+        future = _finite(detail.get("reference_future_value"), "commodity/future reference_future_value")
+        basis = _finite(detail.get("basis_spot_minus_future"), "commodity/future basis")
+        if abs(basis - (spot - future)) > 0.000001:
+            raise ContractError("commodity/future basis does not reconcile")
+        initial = _finite(detail.get("initial_margin"), "commodity/future initial_margin")
+        maintenance = _finite(detail.get("maintenance_margin"), "commodity/future maintenance_margin")
+        if initial <= 0 or maintenance <= 0 or maintenance > initial:
+            raise ContractError("commodity/future margin values are invalid")
+        _nonempty(detail.get("margin_currency"), "commodity/future margin_currency", 3)
+        _nonempty(detail.get("physical_balance"), "commodity/future physical_balance", 30)
+    else:
+        for field in ("exact_underlying", "payoff", "units", "liquidity", "limitations"):
+            _nonempty(detail.get(field), f"other product {field}", 20 if field != "units" else 3)
+        _eligible_evidence_ids(detail.get("evidence_ids"), "other product evidence", evidence)
+
+
+def _validate_valuation(
+    item: Any, asset_class: str, evidence: dict[str, dict[str, Any]]
+) -> None:
+    if not isinstance(item, dict):
+        raise ContractError("analysis_depth valuation_scenarios must be an object")
+    is_equity = asset_class.casefold() in {"stock", "equity"}
+    methods = item.get("methods")
+    required_methods = 2 if is_equity else 1
+    if not isinstance(methods, list) or len(methods) < required_methods:
+        raise ContractError(f"valuation methods must contain at least {required_methods} structured method(s)")
+    method_names: set[str] = set()
+    for index, method in enumerate(methods):
+        field = f"valuation methods[{index}]"
+        if not isinstance(method, dict):
+            raise ContractError(f"{field} must be an object")
+        name = _nonempty(method.get("name"), f"{field}.name", 3)
+        if name in method_names:
+            raise ContractError("valuation methods must be distinct")
+        method_names.add(name)
+        if method.get("currency") != "USD":
+            raise ContractError(f"{field}.currency must be USD")
+        expected_unit = "per_share" if is_equity else "native_unit"
+        if method.get("unit") != expected_unit:
+            raise ContractError(f"{field}.unit must be {expected_unit}")
+        low = _finite(method.get("low"), f"{field}.low")
+        base = _finite(method.get("base"), f"{field}.base")
+        high = _finite(method.get("high"), f"{field}.high")
+        if not low <= base <= high:
+            raise ContractError(f"{field} range must satisfy low <= base <= high")
+        inputs = method.get("inputs")
+        if not isinstance(inputs, list) or len(inputs) < 2:
+            raise ContractError(f"{field}.inputs requires at least two structured assumptions")
+        for input_index, assumption in enumerate(inputs):
+            if not isinstance(assumption, dict):
+                raise ContractError(f"{field}.inputs[{input_index}] must be an object")
+            _nonempty(assumption.get("name"), f"{field}.inputs[{input_index}].name", 3)
+            _finite(assumption.get("value"), f"{field}.inputs[{input_index}].value")
+            _nonempty(assumption.get("unit"), f"{field}.inputs[{input_index}].unit", 2)
+            _eligible_evidence_ids(
+                assumption.get("evidence_ids"), f"{field}.inputs[{input_index}].evidence_ids", evidence
+            )
+        _eligible_evidence_ids(method.get("evidence_ids"), f"{field}.evidence_ids", evidence)
+    scenarios = item.get("scenarios")
+    if not isinstance(scenarios, dict) or tuple(scenarios) != ("base", "bull", "bear"):
+        raise ContractError("valuation scenarios must contain base, bull, and bear in canonical order")
+    scenario_values: dict[str, float] = {}
+    for name, scenario in scenarios.items():
+        if not isinstance(scenario, dict):
+            raise ContractError(f"valuation scenario {name} must be an object")
+        scenario_values[name] = _finite(scenario.get("value"), f"valuation scenario {name}.value")
+        _string_array(scenario.get("drivers"), f"valuation scenario {name}.drivers", 2)
+        _nonempty(scenario.get("trigger"), f"valuation scenario {name}.trigger", 20)
+    if not scenario_values["bear"] <= scenario_values["base"] <= scenario_values["bull"]:
+        raise ContractError("valuation scenario values must satisfy bear <= base <= bull")
+    bridge = item.get("enterprise_to_equity")
+    if is_equity:
+        if not isinstance(bridge, dict) or bridge.get("currency") != "USD":
+            raise ContractError("equity valuation requires a USD enterprise-to-equity bridge")
+        enterprise = _finite(bridge.get("enterprise_value"), "valuation enterprise_value")
+        cash_value = _finite(bridge.get("cash"), "valuation bridge cash")
+        debt = _finite(bridge.get("debt"), "valuation bridge debt")
+        adjustments = _finite(bridge.get("other_adjustments"), "valuation bridge other_adjustments")
+        equity_value = _finite(bridge.get("equity_value"), "valuation bridge equity_value")
+        shares = _finite(bridge.get("diluted_shares"), "valuation bridge diluted_shares")
+        per_share = _finite(bridge.get("per_share_value"), "valuation bridge per_share_value")
+        if shares <= 0 or abs(equity_value - (enterprise + cash_value - debt + adjustments)) > 0.01:
+            raise ContractError("enterprise-to-equity bridge does not reconcile")
+        if abs(per_share - equity_value / shares) > 0.000001:
+            raise ContractError("equity per-share value does not reconcile")
+        _eligible_evidence_ids(bridge.get("evidence_ids"), "valuation bridge evidence_ids", evidence)
+    elif bridge is not None:
+        raise ContractError("non-equity valuation must not fabricate an enterprise-to-equity bridge")
+    sensitivities = item.get("sensitivities")
+    if not isinstance(sensitivities, list) or not sensitivities:
+        raise ContractError("valuation requires at least one structured sensitivity")
+    for index, sensitivity in enumerate(sensitivities):
+        if not isinstance(sensitivity, dict):
+            raise ContractError(f"valuation sensitivity[{index}] must be an object")
+        _nonempty(sensitivity.get("input"), f"valuation sensitivity[{index}].input", 3)
+        low = _finite(sensitivity.get("low"), f"valuation sensitivity[{index}].low")
+        high = _finite(sensitivity.get("high"), f"valuation sensitivity[{index}].high")
+        if low > high:
+            raise ContractError(f"valuation sensitivity[{index}] low exceeds high")
+        _nonempty(sensitivity.get("effect"), f"valuation sensitivity[{index}].effect", 20)
 
 
 def _validate_analysis_depth(state: dict[str, Any], evidence: dict[str, dict[str, Any]], cutoff: datetime) -> None:
@@ -310,19 +555,9 @@ def _validate_analysis_depth(state: dict[str, Any], evidence: dict[str, dict[str
         raise ContractError("analysis_depth is missing required sections or order")
     lanes = state["lanes"]
     if lanes["fundamentals_product"]["status"] == "complete":
-        item = depth["fundamentals_product"]
-        ids = _string_array(item.get("reconciliation_ids"), "analysis_depth fundamentals reconciliation_ids")
-        if any(evidence_id not in evidence for evidence_id in ids):
-            raise ContractError("fundamentals reconciliation references unknown evidence")
-        _string_array(item.get("drivers"), "analysis_depth fundamentals drivers", 2)
-        _nonempty(item.get("limitations"), "analysis_depth fundamentals limitations", 20)
+        _validate_fundamentals_product(depth["fundamentals_product"], state.get("asset_class", ""), evidence, cutoff)
     if lanes["valuation_scenarios"]["status"] == "complete":
-        item = depth["valuation_scenarios"]
-        method_minimum = 2 if state.get("asset_class", "").casefold() in {"stock", "equity"} else 1
-        _string_array(item.get("methods"), "analysis_depth valuation methods", method_minimum)
-        for scenario in ("base", "bull", "bear"):
-            _nonempty(item.get(scenario), f"analysis_depth valuation {scenario}", 30)
-        _nonempty(item.get("sensitivity"), "analysis_depth valuation sensitivity", 30)
+        _validate_valuation(depth["valuation_scenarios"], state.get("asset_class", ""), evidence)
     if lanes["news_catalysts"]["status"] == "complete":
         item = depth["news_catalysts"]
         start = parse_time(item.get("window_start"), "analysis_depth news window_start")
@@ -356,7 +591,9 @@ def _validate_analysis_depth(state: dict[str, Any], evidence: dict[str, dict[str
         parse_time(item.get("next_review"), "analysis_depth monitoring next_review")
 
 
-def _validate_forecasts(state: dict[str, Any], terminal: bool) -> None:
+def _validate_forecasts(
+    state: dict[str, Any], evidence: dict[str, dict[str, Any]], cutoff: datetime, terminal: bool
+) -> None:
     forecasts = state.get("forecasts")
     if not isinstance(forecasts, list):
         raise ContractError("forecasts must be an array")
@@ -378,25 +615,64 @@ def _validate_forecasts(state: dict[str, Any], terminal: bool) -> None:
         numeric_fields = ("start_value", "up", "flat", "down")
         if status == "registered":
             values = [forecast.get(name) for name in numeric_fields]
-            if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in values):
+            if not all(
+                not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+                for value in values
+            ):
                 raise ContractError(f"{field} registered values must be finite numbers")
             if forecast["start_value"] <= 0:
                 raise ContractError(f"{field}.start_value must be positive")
             band = forecast.get("flat_band_return")
             if not isinstance(band, list) or len(band) != 2 or not all(
-                isinstance(value, (int, float)) and math.isfinite(value) for value in band
+                not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+                for value in band
             ) or band[0] > band[1]:
                 raise ContractError(f"{field}.flat_band_return is invalid")
             if abs(forecast["up"] + forecast["flat"] + forecast["down"] - 100.0) > 0.01:
                 raise ContractError(f"{field} probabilities do not total 100")
             _nonempty(forecast.get("forecast_id"), f"{field}.forecast_id", 8)
+            _eligible_evidence_ids(forecast.get("evidence_ids"), f"{field}.evidence_ids", evidence)
+            _nonempty(forecast.get("calibration_basis"), f"{field}.calibration_basis", 30)
+            base_rate = forecast.get("base_rate")
+            if not isinstance(base_rate, list) or len(base_rate) != 3 or not all(
+                not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value)
+                for value in base_rate
+            ) or abs(sum(base_rate) - 100.0) > 0.01:
+                raise ContractError(f"{field}.base_rate must be a three-way distribution totaling 100")
+            _nonempty(forecast.get("scenario_mapping"), f"{field}.scenario_mapping", 30)
+            if forecast.get("confidence") not in {"low", "medium", "high"}:
+                raise ContractError(f"{field}.confidence is invalid")
+            outcome = parse_time(forecast.get("outcome_at"), f"{field}.outcome_at")
+            if outcome <= cutoff:
+                raise ContractError(f"{field}.outcome_at must follow the decision cutoff")
+            _nonempty(forecast.get("resolution_definition"), f"{field}.resolution_definition", 30)
+            if any(forecast.get(name) is not None for name in ("summary", "attempt_ids", "next_action")):
+                raise ContractError(f"{field} registered forecast must not contain abstention fields")
             if reason is not None:
                 raise ContractError(f"{field} registered forecast must not have a reason code")
         else:
             if reason not in REASON_CODES:
                 raise ContractError(f"{field} abstention/block requires a reason code")
-            if any(forecast.get(name) is not None for name in (*numeric_fields, "flat_band_return", "forecast_id")):
-                raise ContractError(f"{field} non-registered forecast must not contain numeric output or ID")
+            _nonempty(forecast.get("summary"), f"{field}.summary", 30)
+            attempt_ids = _string_array(forecast.get("attempt_ids"), f"{field}.attempt_ids")
+            if any(item not in evidence for item in attempt_ids):
+                raise ContractError(f"{field}.attempt_ids reference unknown evidence/attempt records")
+            _nonempty(forecast.get("next_action"), f"{field}.next_action", 20)
+            if forecast.get("confidence") != "insufficient":
+                raise ContractError(f"{field} abstention/block confidence must be insufficient")
+            registered_only = (
+                *numeric_fields,
+                "flat_band_return",
+                "forecast_id",
+                "evidence_ids",
+                "calibration_basis",
+                "base_rate",
+                "scenario_mapping",
+                "outcome_at",
+                "resolution_definition",
+            )
+            if any(forecast.get(name) is not None for name in registered_only):
+                raise ContractError(f"{field} non-registered forecast must not contain registered output fields")
 
 
 def _validate_risk(state: dict[str, Any], terminal: bool) -> None:
@@ -417,8 +693,20 @@ def _validate_risk(state: dict[str, Any], terminal: bool) -> None:
         "unlevered_pnl_usd",
         "gross_5x_pnl_usd",
     )
+    if status in {"complete", "abstained", "blocked"}:
+        if risk.get("liquidity_status") not in {"liquid", "limited", "illiquid", "unknown"}:
+            raise ContractError("terminal risk liquidity_status is invalid")
+        for field in ("costs_summary", "margin_liquidation_summary"):
+            value = _nonempty(risk.get(field), f"risk.{field}", 30)
+            if "|" in value or "\n" in value:
+                raise ContractError(f"risk.{field} contains Markdown table control characters")
     if status == "complete":
-        if not all(isinstance(risk.get(name), (int, float)) and math.isfinite(risk[name]) for name in numeric):
+        if not all(
+            not isinstance(risk.get(name), bool)
+            and isinstance(risk.get(name), (int, float))
+            and math.isfinite(risk[name])
+            for name in numeric
+        ):
             raise ContractError("complete risk record requires finite numeric inputs")
         capital = risk["reference_capital_usd"]
         downside = risk["underlying_downside_return"]
@@ -456,7 +744,9 @@ def _validate_depth_ledger(text: str, state: dict[str, Any], terminal: bool) -> 
             raise ContractError(f"Research Depth Ledger lacks work detail for {lane_name}")
 
 
-def validate_latest_v3(text: str, symbol: str, *, require_terminal: bool) -> dict[str, Any]:
+def validate_latest_v3(
+    text: str, symbol: str, *, expected_asset_class: str, require_terminal: bool
+) -> dict[str, Any]:
     """Return the parsed state or raise ContractError on the first violation."""
 
     if LATEST_V3_MARKER not in text or not text.startswith(f"# {symbol} — Latest Research\n"):
@@ -467,6 +757,8 @@ def validate_latest_v3(text: str, symbol: str, *, require_terminal: bool) -> dic
     state = json_block(text, "Machine-Readable Research State")
     if state.get("schema_version") != STATE_SCHEMA or state.get("symbol") != symbol:
         raise ContractError("state schema or symbol does not match the document")
+    if state.get("asset_class") != expected_asset_class:
+        raise ContractError("state asset_class does not match the frozen active universe")
     if state.get("reporting_currency") != "USD":
         raise ContractError("state reporting_currency must be USD")
     identity = state.get("identity_status")
@@ -502,17 +794,24 @@ def validate_latest_v3(text: str, symbol: str, *, require_terminal: bool) -> dic
     _validate_lanes(state, evidence, require_terminal)
     _validate_price_observation(state, evidence, cutoff, require_terminal)
     _validate_analysis_depth(state, evidence, cutoff)
-    _validate_forecasts(state, require_terminal)
+    _validate_forecasts(state, evidence, cutoff, require_terminal)
     _validate_risk(state, require_terminal)
     unblockers = state.get("unblockers")
     if not isinstance(unblockers, list) or any(not isinstance(item, str) or len(item.strip()) < 20 for item in unblockers):
         raise ContractError("unblockers must be an array of substantive strings")
     if require_terminal:
         statuses = {state["lanes"][name]["status"] for name in REQUIRED_LANES}
-        if "blocked" in statuses and research_status not in {"partial", "blocked"}:
-            raise ContractError("a symbol with blocked lanes cannot claim complete research")
-        if "blocked" not in statuses and research_status != "complete":
-            raise ContractError("terminal research without blocked lanes must be complete")
+        incomplete_core = [
+            name for name in COMPLETION_REQUIRED_LANES if state["lanes"][name]["status"] != "complete"
+        ]
+        partial_required = "blocked" in statuses or bool(incomplete_core)
+        if partial_required and research_status not in {"partial", "blocked"}:
+            raise ContractError(
+                "blocked or incomplete core lanes require partial/blocked research status: "
+                + ", ".join(incomplete_core)
+            )
+        if not partial_required and research_status != "complete":
+            raise ContractError("research with every core lane complete must use complete status")
         forecast_statuses = {forecast["status"] for forecast in state["forecasts"]}
         forecast_lane = state["lanes"]["directional_forecast"]["status"]
         if forecast_statuses == {"registered"} and forecast_lane != "complete":

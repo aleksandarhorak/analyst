@@ -30,6 +30,12 @@
 | `missing_price_metadata` | Bare number treated as current price | Require value/currency/units/time/session/policy/source |
 | `premature_snapshot` | Freeze before central review | Require central reconciliation before immutable snapshot |
 | `terminal_checkpoint_correction` | Terminal state changes after review | Hash-chain pre-snapshot correction; new batch after snapshot |
+| `shallow_asset_depth` | Narrative substitutes for reconciled analysis | Require asset-specific numeric schemas and evidence |
+| `incomplete_forecast_registration` | Probabilities lack calibration/outcome contract | Require full registration or evidence-rich abstention |
+| `fx_conversion_mismatch` | FX ID hides wrong arithmetic | Reconcile rate direction, time, units, and USD value |
+| `partial_completion_ledger` | Five lanes and report risk/confidence are hidden | Reconcile all eleven lanes plus confidence and margin risk |
+| `asset_class_spoof` | Draft selects a weaker asset schema | Bind validation to frozen universe asset class |
+| `broad_abstention_complete` | Identity-only work claims full completion | Core-lane abstention forces partial batch status |
 
 The machine-readable cases in [cases.jsonl](cases.jsonl) are public regression
 fixtures. They validate deterministic invariants and serve as forward-test

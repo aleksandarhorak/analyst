@@ -8,6 +8,11 @@ follow-up analyses. A run may take hours. It keeps one batch ID, decision cutoff
 active-universe hash, and reporting currency and resumes unfinished lanes rather
 than restarting completed work or changing the cutoff.
 
+`RUN.json` freezes the ordered symbol, instrument, asset class, and description
+for that universe. A draft cannot change its asset class to select a weaker
+analysis schema; latest-state, snapshot, and report checks reconcile it to the
+frozen metadata.
+
 The batch is impersonal research. It must not invent portfolio holdings, client
 facts, jurisdiction, order details, or professional authority.
 
@@ -18,6 +23,12 @@ means the analysis and its evidence are present. `abstained` means the analyst
 performed the feasible work but a defensible conclusion is unavailable, with a
 specific reason and next action. `blocked` means an external dependency stopped
 otherwise feasible work. `not_applicable` requires an asset-specific reason.
+Terminal does not mean complete: identity, price, fundamentals/product,
+valuation/scenarios, news, macro transmission, thesis, downside/5x, and
+monitoring are completion-required core lanes. An abstained, blocked, or
+not-applicable core lane makes the symbol and batch `partial`. Evidence-bearing
+market-behavior or directional-forecast abstention may coexist with `complete`
+only when every core lane is complete.
 
 1. `identity_evidence`: exact entity, security/product, venue, class, native
    units, currency, and point-in-time source mapping.
@@ -55,11 +66,20 @@ action.
 
 Structured v3 state also records the native and USD observation value,
 observation time, currency, units, session, live/delayed/close policy, price and
-FX evidence IDs, reconciliations, valuation methods and scenarios, news window,
-macro channels, observable behavior, thesis components, and monitoring signals.
-Preserve contradictory or after-cutoff evidence as ineligible ledger entries;
-never let a completed conclusion rely on it. When publication time is unknown,
-record a substantive archived availability basis or abstain.
+FX evidence IDs and rate observation. Non-USD arithmetic must reconcile the
+native value, USD-per-native rate, and reported USD value. Equity state must
+contain numeric statement bridges, cash-flow and net-debt reconciliations,
+share-count treatment, and sourced period/scale metadata. Commodity/future
+state must contain the exact contract and numeric curve/basis mechanics. Other
+products must expose their underlying, payoff, units, liquidity, limitations,
+and evidence. Valuation state must contain at least two suitable numeric
+methods, linked inputs, base/bull/bear values, an enterprise-to-equity/share
+bridge when applicable, and sensitivities. Forecast state must preserve the
+base rate, calibration basis, scenario mapping, confidence, future outcome
+time, and resolution definition for each registered horizon. Preserve
+contradictory or after-cutoff evidence as ineligible ledger entries; never let
+a completed conclusion rely on it. When publication time is unknown, record a
+substantive archived availability basis or abstain.
 
 ## Dependency Isolation
 
@@ -112,7 +132,11 @@ No active symbol may be silently omitted.
 Before snapshot, correct a terminal checkpoint only through `correct-lane` or
 `correct-shared`; the change requires a reason and is appended to
 `CORRECTIONS.jsonl`. Once a symbol snapshot exists, corrections require a new
-batch so the immutable record remains intact.
+batch so the immutable record remains intact. `RUN.json` stores the current
+correction-chain head. A correction is prepared durably in the ledger before
+the target and head are advanced; if a process stops between those steps,
+`verify` fails closed and `recover-correction` applies that one prepared record
+only when its recorded previous value and previous chain head still match.
 
 ## Conditional Workflows
 

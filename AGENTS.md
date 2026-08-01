@@ -86,6 +86,9 @@ filing, business/product, news, macro, behavior, thesis, or monitoring work.
 - Keep instrument identifiers, names, asset classes, and short descriptions
   current. Resolve platform aliases to an exact exchange-listed security,
   contract, fund, index, or other tradable instrument before using market data.
+- Preserve the ordered symbol, instrument, asset class, and description frozen
+  in the batch checkpoint. A draft must not relabel its asset class to select a
+  weaker analytical schema.
 - Update status, as-of time, horizon, confidence, thesis, valuation, risks,
   invalidation, and next review only after using the relevant finance skills.
 - `Investment candidate` means research supports further consideration at the
@@ -102,8 +105,12 @@ filing, business/product, news, macro, behavior, thesis, or monitoring work.
   historical view with information that was unavailable at the recorded time.
 - Every applicable lane ends complete, justified abstention, blocked, or not
   applicable with evidence and a next action. A generic `insufficient evidence`
-  conclusion does not prove full research was completed. Nonterminal lanes
-  prevent publication; external blockers make the batch `partial`.
+  conclusion does not prove full research was completed. Identity, price,
+  fundamentals/product, valuation/scenarios, news, macro transmission, thesis,
+  downside/5x, and monitoring are completion-required core lanes; a non-
+  complete terminal state in any of them makes the batch `partial`. Nonterminal
+  lanes prevent publication, while justified behavior or forecast abstention
+  can coexist with completion only when every core lane is complete.
 - Complete central reconciliation before any immutable snapshot. Terminal
   checkpoint corrections before snapshot use the append-only batch correction
   ledger; after snapshot, preserve history and use a new corrective batch.

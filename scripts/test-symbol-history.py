@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import importlib.util
 from pathlib import Path
@@ -179,6 +180,12 @@ def main() -> int:
             "--draft", str(draft),
             "--decision-record", str(decision_record),
         ]
+        spoofed_state = copy.deepcopy(state)
+        spoofed_state["asset_class"] = "Other Product"
+        draft.write_text(helpers.render_document(spoofed_state), encoding="utf-8")
+        spoofed = run(HISTORY, snapshot_args, expected=1)
+        assert "frozen active universe" in spoofed.stderr
+        draft.write_text(helpers.render_document(state), encoding="utf-8")
         checkpoint["shared_stages"]["central_reconciliation"]["status"] = "in_progress"
         checkpoint_path.write_text(json.dumps(checkpoint, indent=2) + "\n", encoding="utf-8")
         premature = run(HISTORY, snapshot_args, expected=1)

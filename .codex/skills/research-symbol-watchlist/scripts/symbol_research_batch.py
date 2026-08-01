@@ -12,7 +12,7 @@ import re
 import sys
 from typing import Any
 
-from symbol_research_contract import REQUIRED_LANES, parse_time
+from symbol_research_contract import COMPLETION_REQUIRED_LANES, REQUIRED_LANES, parse_time
 from sync_symbol_research import parse_active_universe, render
 
 
@@ -68,7 +68,7 @@ def load_corrections(path: Path, batch_id: str) -> list[dict[str, Any]]:
     return records
 
 
-def universe_state(repo_root: Path) -> tuple[list[str], str]:
+def universe_state(repo_root: Path) -> tuple[list[str], str, list[dict[str, str]]]:
     records = parse_active_universe(repo_root / "SYMBOLS.md")
     payload = [
         {
@@ -79,7 +79,29 @@ def universe_state(repo_root: Path) -> tuple[list[str], str]:
         }
         for record in records
     ]
-    return [record.symbol for record in records], hashlib.sha256(canonical(payload)).hexdigest()
+    return [record.symbol for record in records], hashlib.sha256(canonical(payload)).hexdigest(), payload
+
+
+def terminal_batch_is_partial(shared: Any, symbol_lanes: Any) -> bool:
+    if isinstance(shared, dict) and any(
+        isinstance(record, dict) and record.get("status") == "blocked" for record in shared.values()
+    ):
+        return True
+    if not isinstance(symbol_lanes, dict):
+        return False
+    for lanes in symbol_lanes.values():
+        if not isinstance(lanes, dict):
+            continue
+        if any(
+            isinstance(record, dict) and record.get("status") == "blocked" for record in lanes.values()
+        ):
+            return True
+        if any(
+            not isinstance(lanes.get(name), dict) or lanes[name].get("status") != "complete"
+            for name in COMPLETION_REQUIRED_LANES
+        ):
+            return True
+    return False
 
 
 def expected_symbol_workspaces(batch_id: str, symbols: list[str]) -> dict[str, dict[str, str]]:
@@ -141,8 +163,12 @@ def atomic_replace(path: Path, data: dict[str, Any]) -> None:
         raise
 
 
-def write_exclusive_text(path: Path, text: str) -> None:
+def write_expected_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        if path.is_file() and path.read_text(encoding="utf-8") == text:
+            return
+        raise BatchError(f"existing initialization artifact differs from expected content: {path}")
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(text)
@@ -165,7 +191,7 @@ def load_run(repo_root: Path, batch_id: str) -> tuple[Path, dict[str, Any]]:
 
 def validate_run(repo_root: Path, data: dict[str, Any], *, final: bool) -> list[str]:
     failures: list[str] = []
-    symbols, universe_hash = universe_state(repo_root)
+    symbols, universe_hash, active_universe = universe_state(repo_root)
     if data.get("schema_version") != SCHEMA:
         failures.append("invalid run schema")
     batch_id = data.get("batch_id")
@@ -181,7 +207,11 @@ def validate_run(repo_root: Path, data: dict[str, Any], *, final: bool) -> list[
         failures.append(str(error))
     if data.get("reporting_currency") != "USD" or data.get("research_depth_contract") != "full-depth-v1":
         failures.append("run currency or depth contract is invalid")
-    if data.get("active_symbols") != symbols or data.get("universe_sha256") != universe_hash:
+    if (
+        data.get("active_symbols") != symbols
+        or data.get("active_universe") != active_universe
+        or data.get("universe_sha256") != universe_hash
+    ):
         failures.append("active universe or universe hash has changed")
     expected_symbol_paths = expected_symbol_workspaces(str(batch_id), symbols)
     if data.get("symbol_workspaces") != expected_symbol_paths:
@@ -275,6 +305,9 @@ def validate_run(repo_root: Path, data: dict[str, Any], *, final: bool) -> list[
     else:
         try:
             corrections = load_corrections(repo_root / expected_corrections, str(batch_id))
+            ledger_head = corrections[-1]["record_sha256"] if corrections else None
+            if data.get("correction_head_sha256") != ledger_head:
+                failures.append("RUN.json correction head differs from CORRECTIONS.jsonl; run recover-correction")
             latest_corrections: dict[tuple[str, str | None, str], dict[str, Any]] = {}
             for record in corrections:
                 key = (record.get("scope"), record.get("symbol"), record.get("target"))
@@ -305,7 +338,7 @@ def validate_run(repo_root: Path, data: dict[str, Any], *, final: bool) -> list[
             if isinstance(lanes, dict):
                 all_statuses.extend(record.get("status") for record in lanes.values() if isinstance(record, dict))
     if final:
-        expected = "partial" if "blocked" in all_statuses else "complete"
+        expected = "partial" if terminal_batch_is_partial(shared, symbol_lanes) else "complete"
         if batch_status != expected:
             failures.append(f"batch_status must be {expected} for its terminal lane states")
         macro = repo_root / "research" / "batches" / str(batch_id) / "MACRO.md"
@@ -338,12 +371,22 @@ def initialize(args: argparse.Namespace) -> int:
     created = parse_time(args.created_at, "created_at")
     if created < cutoff:
         raise BatchError("created_at cannot precede decision_cutoff")
+    if path.exists():
+        _, existing = load_run(repo_root, args.batch_id)
+        if (
+            existing.get("decision_cutoff") != args.decision_cutoff
+            or existing.get("created_at") != args.created_at
+        ):
+            raise BatchError("existing batch uses different cutoff or creation time")
+        failures = validate_run(repo_root, existing, final=False)
+        if failures:
+            raise BatchError("existing batch is invalid: " + "; ".join(failures))
+        print(f"PASS resumed existing initialized batch {args.batch_id}")
+        return 0
     records = parse_active_universe(repo_root / "SYMBOLS.md")
-    symbols, universe_hash = universe_state(repo_root)
+    symbols, universe_hash, active_universe = universe_state(repo_root)
     symbol_workspaces = expected_symbol_workspaces(args.batch_id, symbols)
     shared_workspaces = expected_shared_workspaces(args.batch_id)
-    if path.exists():
-        raise BatchError(f"batch already exists: {args.batch_id}")
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "schema_version": SCHEMA,
@@ -356,9 +399,11 @@ def initialize(args: argparse.Namespace) -> int:
         "research_depth_contract": "full-depth-v1",
         "universe_sha256": universe_hash,
         "active_symbols": symbols,
+        "active_universe": active_universe,
         "symbol_workspaces": symbol_workspaces,
         "shared_workspaces": shared_workspaces,
         "corrections_path": f"research/batches/{args.batch_id}/CORRECTIONS.jsonl",
+        "correction_head_sha256": None,
         "shared_stages": {
             stage: {
                 "status": "not_started",
@@ -388,8 +433,8 @@ def initialize(args: argparse.Namespace) -> int:
     latest_template = (skill_root / "assets" / "LATEST.template.md").read_text(encoding="utf-8")
     for record in records:
         workspace = symbol_workspaces[record.symbol]
-        write_exclusive_text(repo_root / workspace["latest_draft"], render(latest_template, record))
-        write_exclusive_text(
+        write_expected_text(repo_root / workspace["latest_draft"], render(latest_template, record))
+        write_expected_text(
             repo_root / workspace["decision_draft"],
             json.dumps(
                 {
@@ -403,7 +448,7 @@ def initialize(args: argparse.Namespace) -> int:
             )
             + "\n",
         )
-        write_exclusive_text(
+        write_expected_text(
             repo_root / workspace["calculations"],
             f"# {record.symbol} — Batch Calculations\n\n"
             "<!-- analyst-template: symbol-batch-calculations-v1 -->\n\n"
@@ -412,7 +457,7 @@ def initialize(args: argparse.Namespace) -> int:
             "## Forecast And Valuation Calculations\n\nNot started.\n\n"
             "## Downside And 5x Calculations\n\nNot started.\n",
         )
-        write_exclusive_text(
+        write_expected_text(
             repo_root / workspace["evidence"],
             f"# {record.symbol} — Batch Evidence Ledger\n\n"
             "<!-- analyst-template: symbol-batch-evidence-v1 -->\n\n"
@@ -438,15 +483,15 @@ def initialize(args: argparse.Namespace) -> int:
         "publication": "Batch Publication Reconciliation",
     }
     for stage, title in shared_titles.items():
-        write_exclusive_text(
+        write_expected_text(
             repo_root / shared_workspaces[stage],
             f"# {title}\n\n<!-- analyst-template: symbol-batch-shared-v1 -->\n\n"
             f"- Batch ID: {args.batch_id}\n- Decision cutoff: {args.decision_cutoff}\n"
             "- Status: Not started\n\n## Evidence And Work\n\nNot started.\n",
         )
-    write_exclusive_text(macro, macro_content)
-    write_exclusive_text(repo_root / data["corrections_path"], "")
-    write_exclusive_text(path, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    write_expected_text(macro, macro_content)
+    write_expected_text(repo_root / data["corrections_path"], "")
+    write_expected_text(path, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     print(f"PASS initialized {args.batch_id} with {len(symbols)} symbols")
     return 0
 
@@ -566,11 +611,11 @@ def correct_record(args: argparse.Namespace, shared: bool) -> int:
         "evidence_ids": evidence_ids,
         "updated_at": args.updated_at,
     }
-    target.clear()
-    target.update(replacement)
-    data["updated_at"] = args.updated_at
     correction_path = repo_root / data["corrections_path"]
     existing = load_corrections(correction_path, args.batch_id)
+    ledger_head = existing[-1]["record_sha256"] if existing else None
+    if data.get("correction_head_sha256") != ledger_head:
+        raise BatchError("RUN.json and correction ledger heads differ; run recover-correction")
     correction: dict[str, Any] = {
         "schema_version": CORRECTION_SCHEMA,
         "batch_id": args.batch_id,
@@ -584,12 +629,52 @@ def correct_record(args: argparse.Namespace, shared: bool) -> int:
         "previous_record_sha256": existing[-1]["record_sha256"] if existing else None,
     }
     correction["record_sha256"] = content_hash(correction)
-    atomic_replace(path, data)
     with correction_path.open("a", encoding="utf-8") as handle:
         handle.write(canonical(correction).decode("utf-8") + "\n")
         handle.flush()
         os.fsync(handle.fileno())
+    target.clear()
+    target.update(replacement)
+    data["updated_at"] = args.updated_at
+    data["correction_head_sha256"] = correction["record_sha256"]
+    atomic_replace(path, data)
     print(f"PASS corrected {scope}/{symbol or ''}/{target_name} to {args.status}")
+    return 0
+
+
+def recover_correction(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve()
+    path, data = load_run(repo_root, args.batch_id)
+    correction_path = repo_root / data.get("corrections_path", "missing")
+    corrections = load_corrections(correction_path, args.batch_id)
+    ledger_head = corrections[-1]["record_sha256"] if corrections else None
+    run_head = data.get("correction_head_sha256")
+    if run_head == ledger_head:
+        print(f"PASS correction head already reconciled for {args.batch_id}")
+        return 0
+    if not corrections:
+        raise BatchError("RUN.json has a correction head but the correction ledger is empty")
+    pending = corrections[-1]
+    if pending.get("previous_record_sha256") != run_head:
+        raise BatchError("correction recovery requires exactly one prepared record after the RUN.json head")
+    scope = pending.get("scope")
+    symbol = pending.get("symbol")
+    target_name = pending.get("target")
+    target = (
+        data.get("shared_stages", {}).get(target_name)
+        if scope == "shared"
+        else data.get("symbol_lanes", {}).get(symbol, {}).get(target_name)
+    )
+    if target != pending.get("previous"):
+        raise BatchError("prepared correction previous state does not match RUN.json")
+    if scope not in {"shared", "symbol"} or not isinstance(pending.get("replacement"), dict):
+        raise BatchError("prepared correction target is invalid")
+    target.clear()
+    target.update(pending["replacement"])
+    data["updated_at"] = pending["corrected_at"]
+    data["correction_head_sha256"] = ledger_head
+    atomic_replace(path, data)
+    print(f"PASS recovered prepared correction {scope}/{symbol or ''}/{target_name}")
     return 0
 
 
@@ -605,7 +690,9 @@ def finalize(args: argparse.Namespace) -> int:
     nonterminal = [status for status in statuses if status not in TERMINAL_STATUSES]
     if nonterminal:
         raise BatchError(f"cannot finalize with {len(nonterminal)} nonterminal lane(s)")
-    data["batch_status"] = "partial" if "blocked" in statuses else "complete"
+    data["batch_status"] = (
+        "partial" if terminal_batch_is_partial(data["shared_stages"], data["symbol_lanes"]) else "complete"
+    )
     data["updated_at"] = args.updated_at
     failures = validate_run(repo_root, data, final=True)
     if failures:
@@ -680,6 +767,9 @@ def build_parser() -> argparse.ArgumentParser:
     correct_lane_parser.add_argument("--correction-reason", required=True)
     correct_lane_parser.add_argument("--updated-at", required=True)
     correct_lane_parser.set_defaults(handler=lambda args: correct_record(args, False))
+    recover_parser = commands.add_parser("recover-correction")
+    add_common(recover_parser)
+    recover_parser.set_defaults(handler=recover_correction)
     finalize_parser = commands.add_parser("finalize")
     add_common(finalize_parser)
     finalize_parser.add_argument("--updated-at", required=True)

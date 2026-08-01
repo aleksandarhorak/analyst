@@ -13,24 +13,29 @@
   costs and broker liquidation mechanics.
 - Research capacity: impersonal analysis unless suitability was completed.
 - Batch state: one `RUN.json`, active-universe hash, shared cutoff, lane status,
-  blockers, and resumption metadata.
+  blockers, resumption metadata, and the frozen ordered symbol/instrument/asset-
+  class/description records used to select each analytical schema.
 - Depth contract: `full-depth-v1` from `full-depth-contract.md`.
 
 ## Per-Symbol Evidence Minimum
 
 1. Exact instrument, venue/product, quote currency, and units.
 2. Current or most recent valid price/value, timestamp, session, source, and any
-   delay. Convert to USD only with a sourced FX rate and retain native value.
+   delay. Convert to USD only with a sourced USD-per-native FX rate observed by
+   the cutoff, retain the native value, and reconcile the multiplication.
 3. Verified material news or an explicit no-material-news result with searched
    sources and window.
-4. Reconciled fundamentals and valuation for equities, or complete product,
-   physical, contract, index, and scenario analysis appropriate to the asset.
+4. Reconciled fundamentals and valuation for equities, including numeric
+   statement, cash-flow, net-debt, share-count, valuation, and equity-value
+   bridges; or complete numeric product, physical, contract, curve/basis,
+   index/payoff, and scenario analysis appropriate to the asset.
 5. Shared macro regime plus instrument-specific transmission.
 6. Observed market response and evidence-bounded behavioral analysis.
 7. Complete impersonal thesis with base/bull/bear drivers, market-implied view,
    catalysts, contrary case, disconfirmers, invalidation, and monitoring.
-8. Four registered probability distributions or horizon-specific justified
-   abstentions.
+8. Four registered probability distributions with forecast ID, base rate,
+   calibration basis, scenario mapping, confidence, future outcome time, and
+   resolution definition; or horizon-specific evidence-bearing abstentions.
 9. Unlevered and 5x downside with liquidity, financing, spread, slippage, path,
    gap, margin, and liquidation effects.
 10. A machine-readable terminal status for every full-depth lane. A missing
@@ -51,7 +56,9 @@
 - `research/batches/<batch-id>/{IDENTITY,PREFLIGHT,RECONCILIATION,PUBLICATION}.md`:
   persisted shared-stage work.
 - `research/batches/<batch-id>/CORRECTIONS.jsonl`: hash-chained pre-snapshot
-  terminal-state corrections. Post-snapshot corrections use a new batch.
+  terminal-state corrections whose current head is stored in `RUN.json`.
+  Prepared but unapplied corrections are recovered with `recover-correction`;
+  post-snapshot corrections use a new batch.
 - `REPORT.md`: complete cross-symbol current summary linking each `LATEST.md`.
 
 On a new run, prepare a complete `latest-v3` draft and decision JSON, then use
@@ -98,7 +105,11 @@ The detailed linked file owns band, start value, evidence, and calibration.
 - Every active symbol has a current immutable snapshot for the report batch and
   the same batch ID/cutoff in its v3 control block.
 - Every full-depth lane is terminal; external blockers make the batch `partial`.
+- Every completion-required core lane is `complete`; a terminal abstention or
+  not-applicable status in a core lane also makes the batch `partial`.
 - `RUN.json` and `REPORT.md` reconcile active order, state, and blocker counts.
+- `REPORT.md` reconciles every required lane, all four confidence values, and
+  the exact margin/liquidation risk summary rather than hiding incomplete work.
 - Missing data is explicit and does not remove the symbol from the batch.
 - Archived folders remain available but do not appear as active unless restored
   in `SYMBOLS.md`.

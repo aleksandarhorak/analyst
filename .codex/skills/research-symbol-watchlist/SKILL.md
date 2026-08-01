@@ -25,7 +25,9 @@ templates in `assets/` and helpers in `scripts/`.
    with `python3 .codex/skills/research-symbol-watchlist/scripts/symbol_research_batch.py init`.
    This creates governed batch-local drafts, calculations, evidence ledgers,
    shared work files, and a correction ledger. Retain archived folders and
-   never erase decision history.
+   never erase decision history. Treat the ordered symbol, instrument, asset
+   class, and description frozen in `RUN.json` as authoritative for schema
+   selection; reject a draft that changes its class.
 2. Plan bounded, non-overlapping parallel lanes when useful. Share the exact
    identity registry, cutoff, units, source hierarchy, and output contract.
    Keep shared files, snapshots, Git integration, regulated judgments, and final
@@ -39,7 +41,9 @@ templates in `assets/` and helpers in `scripts/`.
    `acquire-point-in-time-financial-data` for official or authorized feeds and
    `verify-financial-evidence` for source, price/value, units, currency, session,
    timestamp, cutoff eligibility, packet ID, and raw hash. Label delayed or
-   prior-close values accurately.
+   prior-close values accurately. For non-USD observations, preserve a sourced
+   USD-per-native FX rate and observation time and reconcile native value times
+   the rate to the reported USD value.
 5. Use `analyze-news-catalysts` for verified event chronology, prior
    expectation, novelty, materiality, observed response, and transmission. A
    no-material-news result requires its search window and sources.
@@ -48,16 +52,24 @@ templates in `assets/` and helpers in `scripts/`.
    `analyze-company-fundamentals`, `value-company-and-forecast`, and
    `build-investment-thesis`. Require reconciled fundamentals, economically
    linked scenarios, suitable valuation lenses, and a complete impersonal
-   thesis. For commodities and futures-based products use
+   thesis. Equity records require numeric statement, cash-flow, net-debt, and
+   share-count bridges; valuation records require at least two numeric methods,
+   linked evidence-bearing inputs, ordered base/bull/bear values, an
+   enterprise-to-equity/share bridge when applicable, and sensitivities. For
+   commodities and futures-based products use
    `analyze-commodities-and-futures` for exact product, physical drivers,
-   curve/basis, roll, positioning lag, settlement, margin, and delivery.
+   numeric curve/basis reconciliation, roll, positioning lag, settlement,
+   margin, and delivery. Other products expose underlying/payoff mechanics,
+   units, liquidity, limitations, and evidence.
 7. Use `analyze-market-behavior` only with observable participant- and
    horizon-specific evidence. Record alternatives and a falsifier; abstain from
    psychology when those observations are unavailable.
 8. Assess 1 trading day, 2 weeks, 1 month, and 2 months. Define an unlevered
    flat band and either supply up/flat/down probabilities totaling 100% or a
    horizon-specific justified abstention. Register populated distributions with
-   `calibrate-financial-forecasts` before publication and record forecast IDs.
+   `calibrate-financial-forecasts` before publication and record forecast ID,
+   base rate, calibration basis, scenario mapping, confidence, future outcome
+   time, and resolution definition for each horizon.
 9. Analyze instrument-level downside and 5x exposure. Separate unlevered loss
    from approximate 5x gross linear P&L and include financing, spread, slippage,
    path, gap, margin-call, and liquidation effects. Use
@@ -68,6 +80,11 @@ templates in `assets/` and helpers in `scripts/`.
     excuse skipped filing, business/product, news, macro, behavior, or thesis
     work. `Insufficient evidence` is a conclusion, not proof of effort.
     Every abstention preserves the evidence and attempts that justify it.
+    Identity, price, fundamentals/product, valuation/scenarios, news, macro
+    transmission, thesis, downside/5x, and monitoring are completion-required
+    core lanes: any non-complete terminal state among them makes the symbol and
+    batch `partial`. Behavior and directional-forecast abstentions may coexist
+    with `complete` only when every core lane is complete.
 11. Complete central reconciliation, then prepare the governed batch-local
     `latest-v3` draft and decision JSON. Run
     `symbol_research_history.py snapshot`; it exclusively creates the immutable
@@ -83,8 +100,11 @@ templates in `assets/` and helpers in `scripts/`.
 
 Use `correct-lane` or `correct-shared` with a substantive reason before
 snapshot when central review finds an error in terminal checkpoint state. The
-helper appends a hash-chained correction record. After a snapshot exists,
-preserve it and start a new corrective batch instead of rewriting history.
+helper prepares a durable hash-chained correction record before atomically
+advancing target state and the chain head. If interruption leaves one prepared
+record, `verify` fails closed; run `recover-correction` only after its previous
+head and previous value have been checked. After a snapshot exists, preserve it
+and start a new corrective batch instead of rewriting history.
 
 ## Probability Contract
 

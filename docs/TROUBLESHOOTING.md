@@ -101,6 +101,12 @@ substantive work, evidence IDs, an exact reason, and a next action. A missing
 price blocks only price-dependent work; it does not justify skipping filings,
 business/product, news, macro, behavior, or a bounded thesis.
 
+Terminal abstention is not completion. If identity, price,
+fundamentals/product, valuation/scenarios, news, macro transmission, thesis,
+downside/5x, or monitoring is not complete, the symbol and batch must be
+reported as `partial`. Also verify that the draft asset class matches the frozen
+`RUN.json` universe; changing it to enter a weaker schema is invalid.
+
 ## A Watchlist Run Was Interrupted
 
 Resume the matching work branch and TODO with the original batch ID, decision
@@ -116,8 +122,11 @@ blocker and publish `partial` rather than claiming complete.
 
 If central review finds an error in terminal checkpoint state before snapshot,
 use the batch helper's `correct-lane` or `correct-shared` command with a
-substantive reason; it appends `CORRECTIONS.jsonl`. After a snapshot exists,
-preserve it and start a new corrective batch.
+substantive reason; it prepares and applies a hash-chained record in
+`CORRECTIONS.jsonl`. If verification reports one prepared but unapplied
+correction after an interruption, run `recover-correction` for that batch only
+after confirming its recorded previous value and chain head. After a snapshot
+exists, preserve it and start a new corrective batch.
 
 ## No Directional Probabilities Appear
 
