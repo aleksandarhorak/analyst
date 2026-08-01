@@ -131,4 +131,5 @@ secrets, or copied research here.
 - `scripts/check-financial-agent.sh` is the repository integrity check for skill
   inventory, metadata, stale policy, research manifests, active-symbol memory,
   report coverage, probability arithmetic, adapter/evaluation/calibration
-  regressions, immutable history/migrations, and client-data leak safeguards.
+  regressions, blinded-review workflow, documentation links, immutable
+  history/migrations, and client-data leak safeguards.
