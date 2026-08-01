@@ -227,6 +227,10 @@ def main() -> int:
     try:
         if not 0 <= args.minimum_score <= 1 or args.timeout <= 0:
             raise EvaluationError("minimum-score must be in [0,1] and timeout positive")
+        if args.output_dir.exists():
+            raise EvaluationError(f"output directory already exists: {args.output_dir}")
+        args.output_dir.parent.mkdir(parents=True, exist_ok=True)
+        args.output_dir.mkdir()
         cases = load_jsonl(args.cases, "case")
         if args.holdout_cases:
             cases.extend(load_jsonl(args.holdout_cases, "holdout case"))
@@ -305,7 +309,6 @@ def main() -> int:
             },
             "cases": case_results,
         }
-        args.output_dir.mkdir(parents=True, exist_ok=True)
         (args.output_dir / "results.json").write_text(
             json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )

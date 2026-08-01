@@ -171,7 +171,15 @@ def main() -> int:
         )
         provider = read(provider_path)
         assert provider["observations"][0]["metadata"]["latency"] == "real_time"
+        assert "resolution_status" not in provider["request"]["instrument"]
         assert "api_key" not in json.dumps(provider).lower()
+
+        leaky_packet = json.loads(json.dumps(provider))
+        leaky_packet["request"]["api_key"] = "synthetic-must-not-persist"
+        leaky_path = output / "leaky.json"
+        leaky_path.write_text(json.dumps(leaky_packet), encoding="utf-8")
+        leaky = run(["validate", str(leaky_path)], expected=1)
+        assert "sensitive credential key" in leaky.stderr
 
         news_path = output / "news.json"
         run(

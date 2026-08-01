@@ -10,6 +10,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import time
@@ -36,6 +37,10 @@ REQUIRED_OBSERVATION_FIELDS = {
     "source_locator",
 }
 CLASSIFICATIONS = {"reported_fact", "derived_fact", "estimate", "scenario", "opinion"}
+SENSITIVE_KEYS = {
+    "api_key", "apikey", "authorization", "password", "secret", "token", "access_token",
+    "client_secret", "private_key",
+}
 
 
 class AcquisitionError(RuntimeError):
@@ -135,6 +140,21 @@ def normalize_number(value: Any) -> Any:
     return int(number) if number.is_integer() else number
 
 
+def sensitive_paths(value: Any, path: str = "request") -> list[str]:
+    matches: list[str] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            normalized = str(key).casefold().replace("-", "_")
+            child_path = f"{path}.{key}"
+            if normalized in SENSITIVE_KEYS:
+                matches.append(child_path)
+            matches.extend(sensitive_paths(child, child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            matches.extend(sensitive_paths(child, f"{path}[{index}]"))
+    return matches
+
+
 def observation(
     *,
     claim_id: str,
@@ -187,6 +207,10 @@ def build_packet(
     parse_datetime(retrieved_at, "retrieved_at")
     flags = list(initial_flags or [])
     errors = list(initial_errors or [])
+    for path in sensitive_paths(request_details):
+        errors.append(f"sensitive credential key in packet request: {path}")
+    if re.search(r"(?i)(?:api[_-]?key|access[_-]?token|authorization|password|secret)=", source_url):
+        errors.append("sensitive credential parameter in source URL")
     seen: set[str] = set()
     if not observations:
         errors.append("no observations matched the explicit request")
@@ -295,6 +319,11 @@ def validate_packet(packet: Any) -> list[str]:
     source = packet.get("source")
     if not isinstance(source, dict) or not source.get("raw_sha256"):
         errors.append("source provenance is incomplete")
+    for path in sensitive_paths(packet.get("request")):
+        errors.append(f"sensitive credential key in packet request: {path}")
+    source_url = source.get("url", "") if isinstance(source, dict) else ""
+    if re.search(r"(?i)(?:api[_-]?key|access[_-]?token|authorization|password|secret)=", str(source_url)):
+        errors.append("sensitive credential parameter in source URL")
     return sorted(set(errors))
 
 
@@ -493,12 +522,14 @@ def run_cftc(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def provider_request(args: argparse.Namespace) -> dict[str, Any]:
+    provider_instrument = instrument_from_args(args)
+    provider_instrument.pop("resolution_status")
     return {
         "schema_version": "provider-request-v1",
         "request_id": args.request_id,
         "kind": args.kind,
         "decision_cutoff": args.decision_cutoff,
-        "instrument": instrument_from_args(args) | {"resolution_status": "resolved"},
+        "instrument": provider_instrument,
         "requirements": {
             "currency": args.currency,
             "session": args.session,

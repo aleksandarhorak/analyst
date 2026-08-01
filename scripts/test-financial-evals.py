@@ -55,6 +55,10 @@ def main() -> int:
         assert result["critical_failure_count"] == 0
         assert result["score"] == 1.0
         assert (file_run / "summary.md").is_file()
+        overwrite = run(
+            [*common(file_run, "overwrite"), "--responses", str(RESPONSES)], expected=1
+        )
+        assert "already exists" in overwrite.stderr
 
         command_run = root / "command-run"
         run(

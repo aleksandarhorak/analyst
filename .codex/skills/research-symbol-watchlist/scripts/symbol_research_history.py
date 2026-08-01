@@ -228,7 +228,13 @@ def verify_symbol(repo_root: Path, symbol: str) -> list[str]:
     for record in records:
         if record.get("symbol") != symbol:
             failures.append(f"{symbol}: manifest symbol mismatch")
-        snapshot_path = repo_root / str(record.get("snapshot_path", ""))
+        expected_relative = (
+            f"research/symbols/{symbol}/history/{record.get('batch_id')}.md"
+        )
+        if record.get("snapshot_path") != expected_relative:
+            failures.append(f"{symbol}: unsafe or mismatched snapshot path")
+            continue
+        snapshot_path = repo_root / expected_relative
         expected_paths.add(snapshot_path.resolve())
         if not snapshot_path.is_file():
             failures.append(f"{symbol}: missing snapshot {snapshot_path.name}")
