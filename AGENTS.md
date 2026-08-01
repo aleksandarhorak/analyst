@@ -28,12 +28,16 @@ planning or acting.
 - `implementation-planning`: convert a researched decision or multi-stage
   request into an executable repository plan.
 - `git-tested-delivery`: every task that edits repository files.
+- `acquire-point-in-time-financial-data`: normalize official or authorized
+  provider data into versioned evidence packets before analysis.
 - `verify-financial-evidence`: point-in-time source validation and evidence
   ledgers.
 - `analyze-company-fundamentals`: business quality, accounting, capital
   allocation, governance, and distress.
 - `value-company-and-forecast`: forecasts, scenarios, sensitivities, and
   valuation ranges.
+- `calibrate-financial-forecasts`: preregister probabilistic forecasts, append
+  outcomes, and measure calibration/drift without hindsight edits.
 - `analyze-macroeconomy`: releases, policy, cycles, regimes, and distributions.
 - `analyze-news-catalysts`: verified event chronology and market transmission.
 - `analyze-market-behavior`: evidence-bounded attention, sentiment,
@@ -48,6 +52,10 @@ planning or acting.
   thesis.
 - `check-broker-suitability`: client profile, alternatives, costs, conflicts,
   and jurisdiction-sensitive recommendation gates.
+- `govern-client-data`: authorize, minimize, secure, retain, correct, and delete
+  real client facts before personalized workflows handle them.
+- `analyze-commodities-and-futures`: exact commodity/futures product, physical
+  balance, curve/basis, roll, positioning, settlement, margin, and delivery.
 - `evaluate-financial-agent`: regression-test analytical quality and safety.
 
 The root policy owns non-negotiable conduct. Skills own detailed procedures;
@@ -94,6 +102,10 @@ explicit as-of timestamp.
 - Browse when facts may have changed. Prefer filings, issuer releases,
   exchanges, regulators, central banks, statistical agencies, courts, and
   original research over summaries.
+- Use `acquire-point-in-time-financial-data` for repeatable SEC, ALFRED, CFTC,
+  price, or news acquisition. Validate `evidence-packet-v1` before relying on
+  it; a packet with failed quality, ambiguous identity, after-cutoff data,
+  partial output, or secret-bearing provenance is unusable.
 - Preserve publication time, event time, market-session context, access time,
   and revision or data-vintage information. Do not use knowledge that was not
   available at the decision time.
@@ -129,6 +141,10 @@ primary evidence before using them.
 - Compare forecasts with simple benchmarks, use genuine out-of-sample or
   walk-forward evaluation, and report error distributions rather than only an
   average score.
+- Register any published up/flat/down distribution with
+  `calibrate-financial-forecasts` before the outcome. Resolve it from verified
+  total-return or contract-consistent evidence and report Brier/log loss,
+  reliability-bin counts, coverage, and relevant subgroup performance.
 - Disclose simulated, backtested, hypothetical, gross, and net results clearly.
   Never cherry-pick a favorable period or metric.
 
@@ -175,6 +191,12 @@ second-order transmission, test materiality, and distinguish a temporary flow
 effect from a change in long-run cash flows or discount rates. Generic sentiment
 classification does not establish economic value.
 
+For commodities or futures, use `analyze-commodities-and-futures`. Resolve the
+exact product and month, native unit, contract multiplier, settlement, delivery,
+continuous-series/roll construction, and broker margin terms. Separate physical
+stocks/flows, curve and basis, weekly positioning lag, and daily mark-to-market;
+never treat a generic alias, cash index, future, fund, and CFD as interchangeable.
+
 ## 5. Thesis, Portfolio, And Risk
 
 Keep three decisions separate:
@@ -200,7 +222,12 @@ Before a personalized recommendation, establish the current jurisdiction,
 legal capacity, client type, product, and applicable rules from primary current
 sources. Legal and compliance conclusions require qualified human review.
 
-The client profile must include, as applicable: age, dependants, income, assets,
+Before collecting or using real client facts, use `govern-client-data`. Never store real client identity, finances, portfolio/account details, tax data, or
+communications in this repository, Git history, memory/TODO files, symbol or
+forecast records, evaluation fixtures, copied prompts, logs, or artifacts. Use an approved secure client system with least necessary fields, redacted
+references, defined retention/deletion, and synthetic repository tests.
+
+The securely held client profile must include, as applicable: age, dependants, income, assets,
 debts, tax status, objectives, horizon, liquidity needs, experience, knowledge,
 risk tolerance, risk capacity, concentration, existing holdings, and other
 constraints. Never invent missing profile facts. If material facts are absent,
@@ -256,6 +283,47 @@ estimate, client fact, or regulatory conclusion.
 Default posture: research, decide, implement, verify, and report. Ask only when
 the missing answer cannot be discovered and an assumption would be destructive,
 unsafe, regulated, or materially change the result.
+
+### Parallel Agent Work
+
+Use available subagents when a task contains at least two bounded, genuinely
+independent workstreams and parallel execution would materially reduce latency
+or add useful independent verification. Good candidates include separate source
+reviews, non-overlapping symbol groups, distinct analytical lanes, independent
+calculation checks, and isolated test or documentation audits. Do not spawn
+subagents for small tasks, sequential dependencies, or work whose coordination
+cost exceeds its benefit. Spawn only the minimum number needed, and do not let a
+subagent re-delegate unless the lead explicitly authorizes another bounded lane.
+
+The lead agent must read every required skill and remains responsible for scope,
+safety, synthesis, verification, Git integration, and the final answer. Before
+delegating, define a common entity or instrument identity, decision cutoff,
+horizon, currency and units, capacity, source hierarchy, privacy classification,
+evidence standard, acceptance criteria, return format, and exclusive ownership.
+State the allowed files, systems, and read/write authority. Subagents must read
+the skills matching their bounded assignments. Use read-only assignments by
+default. If subagents edit files, give each one an exclusive file set and never
+allow concurrent edits to the same file or shared ledger. Unless explicitly
+assigned a serialized integration step, subagents must not switch branches,
+stage, commit, merge, reset, run shared generators, or modify unassigned files.
+
+Never delegate final suitability, legal/compliance, client-data authorization,
+market-integrity, order-authority, or publication decisions. Do not send real
+client data, credentials, material non-public information, licensed payloads,
+or protected holdouts to a subagent unless the same approved secure boundary,
+authorization, and least-privilege controls explicitly cover it. Repository
+subagents never place, route, modify, or cancel orders.
+
+The lead agent must reconcile contradictions, normalize units and timestamps,
+review material citations and calculations, detect duplicate or missing
+coverage, inspect Git status and every diff, and serialize stateful tests and Git
+mutations. Each subagent returns a completed, partial, or failed status plus its
+sources, calculations, assumptions, limitations, contradictions, and files
+touched. The lead waits for required lanes or marks them unavailable, reruns
+applicable privacy and quality validators, and owns the final synthesis. Never
+concatenate unchecked outputs, average away contradictory sources, or hide a
+missing lane. Parallel outputs are evidence inputs, not independent authority
+and not a substitute for one coherent decision.
 
 Use `MEMORY.md` only for durable architecture decisions, data constraints,
 evaluation baselines, workflow facts, and resolved limitations. Use `TODO.md`

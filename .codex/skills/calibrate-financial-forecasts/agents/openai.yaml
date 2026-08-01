@@ -1,0 +1,4 @@
+interface:
+  display_name: "Calibrate Financial Forecasts"
+  short_description: "Register outcomes and score forecast calibration"
+  default_prompt: "Use $calibrate-financial-forecasts to register and score these directional forecasts without hindsight edits."

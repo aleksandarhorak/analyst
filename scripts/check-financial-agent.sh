@@ -22,10 +22,13 @@ required_skills=(
   technical-research
   implementation-planning
   git-tested-delivery
+  acquire-point-in-time-financial-data
   verify-financial-evidence
   analyze-company-fundamentals
   value-company-and-forecast
+  calibrate-financial-forecasts
   analyze-macroeconomy
+  analyze-commodities-and-futures
   analyze-news-catalysts
   analyze-market-behavior
   research-symbol-watchlist
@@ -33,6 +36,7 @@ required_skills=(
   manage-portfolio-risk
   build-investment-thesis
   check-broker-suitability
+  govern-client-data
   evaluate-financial-agent
 )
 
@@ -152,11 +156,73 @@ else
   fail 'symbol research workflow integrity check failed'
 fi
 
+if python3 .codex/skills/research-symbol-watchlist/scripts/migrate_symbol_templates.py --check; then
+  pass 'symbol template versions are current'
+else
+  fail 'symbol template migration check failed'
+fi
+
+if python3 .codex/skills/research-symbol-watchlist/scripts/symbol_research_history.py verify --repo-root .; then
+  pass 'symbol history manifests and hashes'
+else
+  fail 'symbol history integrity failed'
+fi
+
+if python3 scripts/test-symbol-history.py; then
+  pass 'symbol history and migration regressions'
+else
+  fail 'symbol history and migration regressions failed'
+fi
+
+if python3 scripts/test-financial-data.py; then
+  pass 'point-in-time financial data adapter regressions'
+else
+  fail 'point-in-time financial data adapter regressions failed'
+fi
+
+if python3 scripts/test-financial-evals.py; then
+  pass 'executable financial-agent evaluation regressions'
+else
+  fail 'executable financial-agent evaluation regressions failed'
+fi
+
+if python3 scripts/test-human-review.py; then
+  pass 'blinded human-review workflow regressions'
+else
+  fail 'blinded human-review workflow regressions failed'
+fi
+
+if python3 scripts/test-forecast-calibration.py; then
+  pass 'forecast ledger and calibration regressions'
+else
+  fail 'forecast ledger and calibration regressions failed'
+fi
+
+if python3 scripts/check-client-data.py --self-test; then
+  pass 'client-data governance and leak check'
+else
+  fail 'client-data governance and leak check failed'
+fi
+
+if python3 scripts/check-docs.py; then
+  pass 'documentation links and user-guide contracts'
+else
+  fail 'documentation links or user-guide contracts failed'
+fi
+
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do
   if grep -Fq "$phrase" AGENTS.md; then
     pass "core guardrail is present: ${phrase}"
   else
     fail "core guardrail is missing: ${phrase}"
+  fi
+done
+
+for phrase in 'Use available subagents' 'minimum number needed' 'same file or shared' 'Never delegate final suitability' 'owns the final synthesis'; do
+  if grep -Fq "$phrase" AGENTS.md; then
+    pass "parallel-work guardrail is present: ${phrase}"
+  else
+    fail "parallel-work guardrail is missing: ${phrase}"
   fi
 done
 

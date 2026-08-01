@@ -21,6 +21,9 @@ REQUIRED_FIXTURES = {
 SYMBOL_PATTERN = re.compile(r"^\|\s*`([A-Z0-9._-]+)`\s*\|")
 PROBABILITY_PATTERN = re.compile(r"^(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)$")
 NUMBER_PATTERN = re.compile(r"^(\d+(?:\.\d+)?)%?$")
+LATEST_MARKER = "<!-- analyst-template: latest-v2 -->"
+DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
+REPORT_MARKER = "<!-- analyst-template: report-v2 -->"
 
 
 def fail(message: str, failures: list[str]) -> None:
@@ -76,7 +79,14 @@ def check_probability_sum(values: list[str], context: str, failures: list[str]) 
 
 def check_latest(path: Path, symbol: str, failures: list[str]) -> None:
     text = path.read_text(encoding="utf-8")
-    for phrase in ("Reporting currency: USD", "5x gross linear", "Insufficient evidence"):
+    for phrase in (
+        LATEST_MARKER,
+        "Reporting currency: USD",
+        "5x gross linear",
+        "Insufficient evidence",
+        "## Data Lineage",
+        "Template version: 2",
+    ):
         if phrase not in text:
             fail(f"{symbol}/LATEST.md is missing required phrase: {phrase}", failures)
     probability_section = section(text, "Directional Probabilities")
@@ -100,7 +110,14 @@ def check_report(repo_root: Path, symbols: list[str], failures: list[str]) -> No
         fail("REPORT.md is missing", failures)
         return
     report = report_path.read_text(encoding="utf-8")
-    for phrase in ("Reporting currency: USD", "5x gross linear", "1 trading day", "2 months"):
+    for phrase in (
+        REPORT_MARKER,
+        "Reporting currency: USD",
+        "5x gross linear",
+        "1 trading day",
+        "2 months",
+        "Evidence packets / forecast registrations",
+    ):
         if phrase not in report:
             fail(f"REPORT.md is missing required phrase: {phrase}", failures)
     for heading in ("Universe And Current Evidence", "Directional Probabilities", "Downside And 5x Exposure"):
@@ -143,7 +160,10 @@ def check_symbol_tree(repo_root: Path, symbols: list[str], failures: list[str]) 
             fail(f"missing {symbol}/LATEST.md", failures)
         else:
             check_latest(latest, symbol, failures)
-        if not decisions.is_file() or "append-only" not in decisions.read_text(encoding="utf-8"):
+        if not decisions.is_file() or any(
+            phrase not in decisions.read_text(encoding="utf-8")
+            for phrase in ("append-only", DECISIONS_MARKER)
+        ):
             fail(f"missing or invalid {symbol}/DECISIONS.md", failures)
         if not history.is_dir():
             fail(f"missing {symbol}/history", failures)

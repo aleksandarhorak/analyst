@@ -1,0 +1,34 @@
+{
+  "schema_version": "provider-response-v1",
+  "request_id": "news-aapl-20250801",
+  "provider": "fixture-provider",
+  "complete": true,
+  "instrument": {
+    "id": "sec:cik:0000320193:AAPL",
+    "symbol": "AAPL",
+    "venue": "XNAS",
+    "asset_class": "equity"
+  },
+  "source_url": "https://provider.example/records/news-aapl-20250801",
+  "rights": "Synthetic fixture; redistribution allowed",
+  "observations": [
+    {
+      "field": "headline",
+      "value": "Synthetic issuer update",
+      "unit": null,
+      "currency": null,
+      "classification": "reported_fact",
+      "event_time": "2025-08-01T10:00:00Z",
+      "published_at": "2025-08-01T10:01:00Z",
+      "as_of": "2025-08-01T10:01:00Z",
+      "publisher": "Synthetic Wire",
+      "canonical_url": "https://news.example/synthetic-update",
+      "correction_status": "original",
+      "document_id": "synthetic-document-1",
+      "headline": "Synthetic issuer update",
+      "updated_at": "2025-08-01T10:01:00Z",
+      "source_locator": "article:synthetic-1"
+    }
+  ],
+  "errors": []
+}

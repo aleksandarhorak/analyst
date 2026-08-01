@@ -16,22 +16,30 @@ or compliance reviewers.
 
 1. Establish jurisdiction, professional capacity, client type, account, product,
    and applicable current rule set. Record the as-of date.
-2. Gather age, dependants, employment and income, assets, debts, tax status,
+2. Before receiving or persisting real client facts, use `govern-client-data` to
+   establish purpose/authority, minimization, approved secure system, roles,
+   provider/region, retention/deletion, correction, and incident controls. Never
+   store real client facts in this repository, symbol/forecast memory, fixtures,
+   prompts copied to files, logs, or Git history.
+3. Gather only the decision-necessary age range, dependants, employment and
+   income, assets, debts, tax status,
    objectives, horizon, liquidity needs, experience, knowledge, risk tolerance,
-   risk capacity, existing holdings, concentration, and other constraints.
-3. Never infer missing client facts. If material information is absent, ask or
+   risk capacity, existing holdings, concentration, and other constraints in the
+   approved client system. Reference them by redacted profile ID and verified
+   date rather than repeating sensitive values.
+4. Never infer missing client facts. If material information is absent, ask or
    restrict the output to impersonal education and research.
-4. Understand product mechanics, downside, leverage, liquidity, complexity,
+5. Understand product mechanics, downside, leverage, liquidity, complexity,
    fees, financing, tax effects, conflicts, exit, and performance across adverse
    scenarios.
-5. Compare cash and reasonably available alternatives on risk, reward, cost,
+6. Compare cash and reasonably available alternatives on risk, reward, cost,
    complexity, liquidity, and client fit.
-6. Test the single transaction and the resulting series of transactions for
+7. Test the single transaction and the resulting series of transactions for
    concentration, turnover, excessive cost, and inconsistency with objectives.
-7. Identify compensation, inventory, banking, research, affiliate, data,
+8. Identify compensation, inventory, banking, research, affiliate, data,
    referral, and personal conflicts. State mitigations; disclosure alone does
    not cure a poor recommendation.
-8. Record rationale, rejected alternatives, missing facts, reviewer, and expiry
+9. Record rationale, rejected alternatives, missing facts, reviewer, and expiry
    or refresh conditions.
 
 Use [the suitability-gate template](references/suitability-gate.md).
@@ -44,7 +52,8 @@ interest, or compliant solely because this checklist was completed.
 
 ## Mandatory Stops
 
-Stop for missing material profile facts, inability to understand the product,
+Stop for failed client-data governance, missing material profile facts,
+inability to understand the product,
 unresolved authority, prohibited or manipulative conduct, suspected material
 non-public information, sanctions restrictions, or a conflict that cannot be
 controlled.

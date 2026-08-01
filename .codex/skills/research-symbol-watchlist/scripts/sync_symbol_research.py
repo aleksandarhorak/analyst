@@ -20,6 +20,8 @@ class SymbolRecord:
 
 ROW_PATTERN = re.compile(r"^\|\s*`([A-Z0-9._-]+)`\s*\|")
 REQUIRED_FILES = ("LATEST.md", "DECISIONS.md")
+LATEST_MARKER = "<!-- analyst-template: latest-v2 -->"
+DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
 
 
 def default_repo_root() -> Path:
@@ -127,6 +129,12 @@ def check(repo_root: Path, records: list[SymbolRecord]) -> list[str]:
         for filename in REQUIRED_FILES:
             if not (directory / filename).is_file():
                 failures.append(f"missing {record.symbol}/{filename}")
+        latest_path = directory / "LATEST.md"
+        if latest_path.is_file() and LATEST_MARKER not in latest_path.read_text(encoding="utf-8"):
+            failures.append(f"unmigrated {record.symbol}/LATEST.md")
+        decisions_path = directory / "DECISIONS.md"
+        if decisions_path.is_file() and DECISIONS_MARKER not in decisions_path.read_text(encoding="utf-8"):
+            failures.append(f"unmigrated {record.symbol}/DECISIONS.md")
         if not (directory / "history").is_dir():
             failures.append(f"missing {record.symbol}/history directory")
         expected_link = f"research/symbols/{record.symbol}/LATEST.md"

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Client Data"
+  short_description: "Minimize and protect sensitive client facts"
+  default_prompt: "Use $govern-client-data to define safe collection, handling, retention, and deletion for these client facts."

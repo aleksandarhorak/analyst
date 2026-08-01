@@ -15,21 +15,27 @@ and distinguish company guidance, consensus, analyst estimates, and scenarios.
 
 1. Select forecast drivers tied to volumes, prices, unit economics, margins,
    working capital, reinvestment, taxes, and financing.
-2. Reconcile the opening historical period and forecast statements. Explain
+2. Select the appropriate branch in [sector models](references/sector-models.md)
+   for banks/lenders, insurers, semiconductors/hardware, SaaS/software,
+   energy/resources, or cyclicals. Use several branches for a sum of parts.
+3. Reconcile the opening historical period and forecast statements. Explain
    every material normalization.
-3. Build base, bull, and bear cases with coherent paths, explicit triggers, and
+4. Build base, bull, and bear cases with coherent paths, explicit triggers, and
    probabilities only when defensible.
-4. Choose valuation methods suited to the business and capital structure. Use
+5. Choose valuation methods suited to the business and capital structure. Use
    at least two informative lenses when possible.
-5. For discounted cash flow, expose cash-flow definition, discount rate,
+6. For discounted cash flow, expose cash-flow definition, discount rate,
    terminal method, and terminal-value share. For comparables, normalize peer,
    accounting, growth, and cycle differences.
-6. Bridge enterprise to equity value with net debt, leases, pensions,
+7. Bridge enterprise to equity value with net debt, leases, pensions,
    minorities, associates, options, convertibles, dilution, and non-operating
    assets as applicable.
-7. Run sensitivities and reverse-engineer what the current price implies.
-8. Compare value with price after risk, time, dilution, tax, liquidity, and
+8. Run sensitivities and reverse-engineer what the current price implies.
+9. Compare value with price after risk, time, dilution, tax, liquidity, and
    execution costs; define invalidation and monitoring.
+10. When publishing directional probabilities, preregister the exact cutoff,
+    band, horizon, method version, and evidence packet IDs with
+    `calibrate-financial-forecasts` before the outcome.
 
 Use [the valuation template](references/valuation-model.md).
 

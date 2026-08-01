@@ -19,6 +19,8 @@ __pycache__/
 /artifacts/
 /coverage/
 /tmp/
+/evaluations/holdout/
+/evaluations/runs/
 
 # Logs and temporary files
 *.log

@@ -9,8 +9,10 @@ description: Analyze economic releases, cycles, policy, credit, financial condit
 
 1. Define economies, variables, currencies, horizon, market cutoff, and whether
    the task is description, forecasting, scenario analysis, or causal inference.
-2. Build a release-vintage ledger. Separate event time, publication time,
-   consensus available before release, first release, and revision.
+2. Build a release-vintage ledger. Use `acquire-point-in-time-financial-data`
+   with explicit ALFRED real-time periods where supported. Separate event time,
+   publication time, consensus available before release, first release,
+   revision interval, packet ID, and raw hash.
 3. Normalize units, seasonal adjustment, annualization, frequency, base
    effects, nominal versus real values, and levels versus rates of change.
 4. Diagnose the regime across growth, inflation, labor, monetary and fiscal

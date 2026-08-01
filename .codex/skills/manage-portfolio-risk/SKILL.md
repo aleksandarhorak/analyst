@@ -10,7 +10,9 @@ description: Evaluate portfolio fit, size exposures, and stress concentration, f
 Establish objectives, benchmark, horizon, liquidity needs, permissible assets,
 risk budget, leverage and concentration limits, tax or currency constraints,
 current holdings, reliable positions, and prices. Use `check-broker-suitability`
-when the analysis becomes a personalized recommendation.
+when the analysis becomes a personalized recommendation. Before real client
+positions or constraints are handled, use `govern-client-data` and keep them in
+the approved client system rather than this repository or its artifacts.
 
 ## Procedure
 
