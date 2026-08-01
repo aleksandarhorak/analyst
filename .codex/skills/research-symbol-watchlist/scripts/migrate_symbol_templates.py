@@ -75,7 +75,7 @@ def migrate_report(text: str) -> str:
     reject_unknown_marker(text, "report")
     result = text if REPORT_MARKER in text else insert_after_title(text, REPORT_MARKER)
     lineage = "- Evidence packets / forecast registrations: Not researched"
-    if lineage not in result:
+    if not re.search(r"(?m)^- Evidence packets / forecast registrations: .+$", result):
         anchor = "- Capacity: Impersonal research; no order authority"
         if anchor not in result:
             raise MigrationError("report lacks capacity metadata anchor")

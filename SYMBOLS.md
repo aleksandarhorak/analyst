@@ -75,7 +75,7 @@ Last universe review: `2026-07-31T23:30:47+01:00`.
 | `JPM` | JPMorgan Chase & Co. | Stock | Diversified banking, payments, markets, asset management, and consumer finance. | Observe |
 | `BAC` | Bank of America Corporation | Stock | Consumer and commercial banking, wealth management, payments, and capital markets. | Observe |
 | `WMT` | Walmart Inc. | Stock | Large-scale retail, grocery, membership clubs, logistics, advertising, and e-commerce. | Observe |
-| `XOM` | Exxon Mobil Corporation | Stock | Integrated oil, natural gas, refining, chemicals, and lower-carbon investments. | Observe |
+| `XOM` | ExxonMobil Holdings Corp | Stock | NYSE-listed ExxonMobil holding-company exposure to integrated oil, natural gas, refining, chemicals, and lower-carbon investments. | Observe |
 | `CVX` | Chevron Corporation | Stock | Integrated oil and gas production, refining, chemicals, and energy projects. | Observe |
 | `DIS` | The Walt Disney Company | Stock | Entertainment studios, streaming, television, sports media, parks, resorts, and consumer products. | Observe |
 | `BA` | The Boeing Company | Stock | Commercial aircraft, defense, space, and aviation services. | Observe |
@@ -99,13 +99,49 @@ exchange source.
 
 ## Current Analysis And Decisions
 
-Add one row per active decision. Do not mark a symbol as an investment candidate
-without a current evidence ledger, valuation or decision framework, downside,
-invalidation, and review date.
+One row per active decision. `High in insufficiency` is confidence in the stop
+condition, not confidence about market direction.
 
 | Symbol | Status | As of | Horizon | Confidence | Thesis and valuation/entry conditions | Key risks and invalidation | Next review |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| — | — | — | — | — | No completed symbol analysis yet. | — | — |
+| `AAPL` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `NVDA` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `AMZN` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `MSFT` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `META` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `GOOG` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `TSLA` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `AMD` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `NFLX` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `PLTR` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `AVGO` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `INTC` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `MU` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `SMCI` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `COIN` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `MSTR` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `UBER` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `SOFI` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `JPM` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `BAC` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `WMT` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `XOM` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `CVX` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `DIS` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `BA` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `F` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `GM` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `NKE` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `PFE` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `ORCL` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `BABA` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity verified; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `GOLD` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `CRUDOIL` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `SILVER` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `ARABICA` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `US100` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `SP500` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
+| `DJI30` | Observe | `2026-08-01T00:49:49Z` | 1 day to 2 months | High in insufficiency | Identity unresolved; no current evidence-backed directional or valuation view. | Unreviewed evidence could reverse any view; validated price/news/product data ends abstention. | 2026-08-08 or data resolution |
 
 ## Analysis And Status Change Log
 
@@ -115,6 +151,8 @@ changes, and material status or thesis changes.
 | Timestamp | Symbol | Change | Evidence and rationale | Analyst/agent | Next action |
 | --- | --- | --- | --- | --- | --- |
 | 2026-07-31T23:30:47+01:00 | All | Watchlist initialized | Initial user-specified research universe; every symbol starts as `Observe`. | Agent | Verify and analyze before changing status. |
+| 2026-08-01T00:50:51Z | All | Completed evidence-bounded batch `2026-08-01T004949Z` | 38/38 covered; 31 identities verified, 7 aliases unresolved, 0 usable current price/news packets, and 0 published probabilities. | Agent | Resolve exact products and connect authorized evidence before directional analysis. |
+| 2026-08-01T00:55:00Z | XOM | Updated issuer identity | Current SEC ticker/exchange file maps XOM to CIK `0002115436`, ExxonMobil Holdings Corp, on NYSE; the immutable batch snapshot preserves the preceding watchlist label and shows the reconciled exact identity. | Agent | Recheck corporate-action and predecessor/successor treatment before financial comparison. |
 
 ## Archived Symbols
 

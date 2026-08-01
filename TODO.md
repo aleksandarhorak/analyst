@@ -20,8 +20,8 @@ temporary notes.
 - [x] Expand client-data leak detection and synthetic self-tests.
 - [ ] Run focused validators and the stage quality gate after each implementation stage.
 - [ ] Commit each completed stage on the feature branch.
-- [ ] Run the complete current watchlist workflow or record explicit evidence-bounded abstentions.
-- [ ] Run a leakage-safe baseline/candidate evaluation and review every critical result.
+- [x] Run the complete current watchlist workflow or record explicit evidence-bounded abstentions.
+- [x] Run a leakage-safe baseline/candidate evaluation and review every critical result.
 - [ ] Update durable memory and operational documentation.
 - [ ] Review final diff and status, reset this task plan, and run the final gate.
 - [ ] Merge automatically into `dev` and verify the clean merged state.

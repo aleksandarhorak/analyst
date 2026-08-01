@@ -36,3 +36,16 @@ score. Deterministic assertions test explicit contracts; qualified blinded
 review remains necessary for nuanced correctness and investment usefulness.
 The committed passing responses and replay candidate are harness tests only;
 they are never evidence of model performance or forecast skill.
+
+## Latest Harness Verification
+
+At `2026-08-01T00:53:46Z`, the fixture replay was run three times against all
+21 public cases with the passing fixture as the frozen baseline. It scored
+1.000 in every repeat, delta 0.000 versus baseline, and all 153 repeated
+critical assertions passed. The untracked result JSON SHA-256 was
+`2e9704766a9031d3cef3f4b6e45f085c8ea335c668a942ca33ece71ef6e5bef4`;
+public-case, rubric, scorer, and candidate-command hashes are recorded by the
+runner. This verifies determinism, anti-leakage transport, scoring, repeats,
+baseline comparison, and the critical gate only. No real candidate, controlled
+hidden set, financial outcome, or blinded human review was available, so it
+supports no model-quality or investment-skill claim.

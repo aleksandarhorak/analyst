@@ -15,7 +15,8 @@ E164_PHONE_PATTERN = re.compile(r"(?<![\w+])\+[1-9]\d{7,14}(?!\d)")
 IBAN_PATTERN = re.compile(r"(?<![A-Z0-9])[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}(?![A-Z0-9])")
 UK_NI_PATTERN = re.compile(r"(?<![A-Z0-9])[A-CEGHJ-PR-TW-Z]{2}\d{6}[A-D](?![A-Z0-9])", re.I)
 PAYMENT_CARD_CANDIDATE = re.compile(
-    r"(?<![\d/])(?:\d{13,19}|\d{4}(?:[ -]\d{4}){2,3})(?!\d)"
+    r"(?<![A-Z0-9/])(?:\d{13,19}|\d{4}(?:[ -]\d{4}){2,3})(?![A-Z0-9])",
+    re.I,
 )
 SENSITIVE_KEY_PATTERN = re.compile(
     r"(?ix)(?:[\"']?)(?:"
