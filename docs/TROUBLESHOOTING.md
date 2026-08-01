@@ -81,8 +81,52 @@ active symbol and normally updates root `REPORT.md`, each `LATEST.md`, append-on
 `DECISIONS.md`, immutable history snapshots, and hash manifests. `SYMBOLS.md`
 changes only for a verified identity, status, or universe change.
 
+A full-depth batch may take hours. It also updates
+`research/batches/<batch-id>/RUN.json` and `MACRO.md`; use those checkpoints to
+resume instead of discarding completed work.
+
 Review the batch coverage and manifests; never delete history to reduce the
 diff.
+
+## The Batch Returned Only Prices and News
+
+That is incomplete. The exact trigger requires every applicable fundamentals or
+product, valuation/scenario, macro-transmission, observable-behavior, thesis,
+forecast/abstention, downside/5x, and monitoring lane for every active symbol.
+A generic `insufficient evidence` paragraph does not prove those lanes ran.
+
+Inspect each v3 Research Depth Ledger and machine-readable state. Every lane
+must be complete, justified abstention, blocked, or not applicable with
+substantive work, evidence IDs, an exact reason, and a next action. A missing
+price blocks only price-dependent work; it does not justify skipping filings,
+business/product, news, macro, behavior, or a bounded thesis.
+
+Terminal abstention is not completion. If identity, price,
+fundamentals/product, valuation/scenarios, news, macro transmission, thesis,
+downside/5x, or monitoring is not complete, the symbol and batch must be
+reported as `partial`. Also verify that the draft asset class matches the frozen
+`RUN.json` universe; changing it to enter a weaker schema is invalid.
+
+## A Watchlist Run Was Interrupted
+
+Resume the matching work branch and TODO with the original batch ID, decision
+cutoff, universe hash, `RUN.json`, and shared `MACRO.md`. Verify existing
+batch-local drafts, calculations, evidence/attempt ledgers, manifests, and
+snapshots; skip terminal lanes and continue unfinished ones. Do
+not restart with a new cutoff, duplicate decision rows, rewrite history, or use
+evidence published after the preserved cutoff.
+
+The batch cannot be finalized while any required lane is `not_started` or
+`in_progress`. If an external dependency remains unavailable, record the exact
+blocker and publish `partial` rather than claiming complete.
+
+If central review finds an error in terminal checkpoint state before snapshot,
+use the batch helper's `correct-lane` or `correct-shared` command with a
+substantive reason; it prepares and applies a hash-chained record in
+`CORRECTIONS.jsonl`. If verification reports one prepared but unapplied
+correction after an interruption, run `recover-correction` for that batch only
+after confirming its recorded previous value and chain head. After a snapshot
+exists, preserve it and start a new corrective batch.
 
 ## No Directional Probabilities Appear
 
@@ -126,7 +170,8 @@ The lead agent should mark the lane partial or failed, preserve missing coverage
 and verify contradictory sources. It must not concatenate unchecked responses,
 vote across conflicting evidence, silently change cutoffs, or let two agents edit
 the same file. Re-run a bounded lane when safe; otherwise abstain or report the
-unresolved conflict.
+unresolved conflict. The batch cannot be called complete while required
+coverage remains missing.
 
 ## A Quality Gate Fails
 

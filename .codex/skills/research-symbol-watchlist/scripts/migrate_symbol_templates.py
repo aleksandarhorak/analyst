@@ -13,6 +13,7 @@ import sys
 LATEST_MARKER = "<!-- analyst-template: latest-v2 -->"
 DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
 REPORT_MARKER = "<!-- analyst-template: report-v2 -->"
+KNOWN_VERSIONS = {"latest": {2, 3}, "decisions": {2}, "report": {2, 3}}
 ANY_MARKER = re.compile(r"<!-- analyst-template: (latest|decisions|report)-v(\d+) -->")
 SYMBOL_PATTERN = re.compile(r"^\|\s*`([A-Z0-9._-]+)`\s*\|")
 
@@ -47,13 +48,16 @@ def insert_after_title(text: str, marker: str) -> str:
 
 def reject_unknown_marker(text: str, expected_kind: str) -> None:
     match = ANY_MARKER.search(text)
-    if match and (match.group(1) != expected_kind or int(match.group(2)) != 2):
+    if match and (
+        match.group(1) != expected_kind
+        or int(match.group(2)) not in KNOWN_VERSIONS[expected_kind]
+    ):
         raise MigrationError(f"unknown or mismatched template marker: {match.group(0)}")
 
 
 def migrate_latest(text: str) -> str:
     reject_unknown_marker(text, "latest")
-    result = text if LATEST_MARKER in text else insert_after_title(text, LATEST_MARKER)
+    result = text if ANY_MARKER.search(text) else insert_after_title(text, LATEST_MARKER)
     if "## Data Lineage" not in result:
         suffix = "" if result.endswith("\n") else "\n"
         result += (
@@ -73,7 +77,7 @@ def migrate_decisions(text: str) -> str:
 
 def migrate_report(text: str) -> str:
     reject_unknown_marker(text, "report")
-    result = text if REPORT_MARKER in text else insert_after_title(text, REPORT_MARKER)
+    result = text if ANY_MARKER.search(text) else insert_after_title(text, REPORT_MARKER)
     lineage = "- Evidence packets / forecast registrations: Not researched"
     if not re.search(r"(?m)^- Evidence packets / forecast registrations: .+$", result):
         anchor = "- Capacity: Impersonal research; no order authority"

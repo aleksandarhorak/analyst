@@ -156,6 +156,12 @@ else
   fail 'symbol research workflow integrity check failed'
 fi
 
+if python3 scripts/test-symbol-research.py; then
+  pass 'full-depth symbol research and resumable batch regressions'
+else
+  fail 'full-depth symbol research and resumable batch regressions failed'
+fi
+
 if python3 .codex/skills/research-symbol-watchlist/scripts/migrate_symbol_templates.py --check; then
   pass 'symbol template versions are current'
 else

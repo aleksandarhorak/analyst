@@ -45,7 +45,42 @@ dependent work, shared files, Git operations, regulated judgments, and final
 synthesis with the lead agent.
 ```
 
+`do symbols research` already enables suitable bounded parallel lanes; this
+modifier is mainly for other large requests.
+
+## Complete Watchlist Research
+
+### Complete Watchlist Batch
+
+```text
+do symbols research
+```
+
+This exact command runs the potentially hours-long, resumable master workflow
+for every active row in `SYMBOLS.md`. It automatically composes every applicable
+identity/evidence, price, company-fundamental or product, valuation/scenario,
+news, shared-macro and per-symbol transmission, observable behavior, complete
+impersonal thesis, four-horizon forecast, downside/5x, and monitoring lane. A
+missing dependency blocks only dependent outputs; all feasible work continues.
+
+The agent preserves one batch ID, cutoff, universe hash, checkpoint, shared
+macro artifact, batch-local drafts/calculations/evidence ledgers, immutable
+per-symbol decisions, and a reconciled `REPORT.md`. It resumes unfinished lanes
+without changing the cutoff or rewriting completed history. Central
+reconciliation precedes snapshots; governed pre-snapshot corrections are
+hash-chained, while post-snapshot corrections use a new batch. A run with
+external blockers is `partial`, not falsely `complete`.
+
+Portfolio fit requires supplied positions and mandate. Suitability requires
+governed client facts, jurisdiction, and capacity. Detailed execution requires
+instrument/venue, side, size, urgency, and time window. The batch never invents
+those inputs and never places orders.
+
 ## Company Research And Valuation
+
+The recipes in this and the next section can be run alone. The complete
+watchlist command invokes each applicable specialist workflow automatically;
+they are not optional follow-up steps for that batch.
 
 ### Research One Company
 
@@ -232,6 +267,9 @@ the exact files changed.
 ```
 
 ### Evaluate the Agent
+
+This recipe validates a change to the agent, policy, skill, tool, or model (or
+an explicit evaluation request). It is not routine per-symbol research.
 
 ```text
 Evaluate the financial agent after [CHANGE]. Use the evaluate-financial-agent

@@ -42,8 +42,10 @@ planning or acting.
 - `analyze-news-catalysts`: verified event chronology and market transmission.
 - `analyze-market-behavior`: evidence-bounded attention, sentiment,
   reference-point, extrapolation, and participant-response analysis.
-- `research-symbol-watchlist`: full-universe current price/news research,
-  four-horizon probabilities, durable symbol memory, and `REPORT.md`.
+- `research-symbol-watchlist`: potentially hours-long, resumable full-universe
+  orchestration across identity/evidence, price, fundamentals or product
+  mechanics, valuation/scenarios, macro, news, behavior, thesis, four-horizon
+  forecasts, downside/5x, durable symbol memory, and `REPORT.md`.
 - `plan-trade-execution`: market structure, implementation shortfall, and
   transaction-cost analysis; never order placement.
 - `manage-portfolio-risk`: sizing, concentration, factors, liquidity, stress,
@@ -69,15 +71,24 @@ not an automatic buy list or a substitute for current evidence, valuation,
 portfolio fit, suitability, or execution analysis.
 
 When the user says `do symbols research`, read and follow
-`research-symbol-watchlist`. Research every active symbol online, synchronize
-`research/symbols/`, preserve an immutable point-in-time decision snapshot,
-update each `LATEST.md` and append-only `DECISIONS.md`, then replace root
-`REPORT.md` with a complete batch. Missing data or unresolved aliases remain
-visible; they never justify silently omitting a symbol.
+`research-symbol-watchlist`. This exact command is the master full-depth
+watchlist workflow, not a price/news scan or a list of optional follow-ups.
+Process every active symbol through every applicable specialist lane,
+  synchronize `research/symbols/`, checkpoint one batch ID/cutoff under
+`research/batches/` with batch-local drafts, calculations, evidence/attempt
+ledgers, and shared reconciliation, preserve immutable point-in-time decisions, update each
+`LATEST.md` and append-only `DECISIONS.md`, then replace root `REPORT.md` with a
+reconciled batch. A run may take hours and must resume the same checkpoint.
+Missing data or unresolved aliases remain visible and block only dependent
+outputs; they never justify silently omitting a symbol or skipping feasible
+filing, business/product, news, macro, behavior, thesis, or monitoring work.
 
 - Keep instrument identifiers, names, asset classes, and short descriptions
   current. Resolve platform aliases to an exact exchange-listed security,
   contract, fund, index, or other tradable instrument before using market data.
+- Preserve the ordered symbol, instrument, asset class, and description frozen
+  in the batch checkpoint. A draft must not relabel its asset class to select a
+  weaker analytical schema.
 - Update status, as-of time, horizon, confidence, thesis, valuation, risks,
   invalidation, and next review only after using the relevant finance skills.
 - `Investment candidate` means research supports further consideration at the
@@ -92,6 +103,20 @@ visible; they never justify silently omitting a symbol.
   gap, margin-call, and forced-liquidation risk.
 - Record material status changes in the file's change log. Never backfill a
   historical view with information that was unavailable at the recorded time.
+- Every applicable lane ends complete, justified abstention, blocked, or not
+  applicable with evidence and a next action. A generic `insufficient evidence`
+  conclusion does not prove full research was completed. Identity, price,
+  fundamentals/product, valuation/scenarios, news, macro transmission, thesis,
+  downside/5x, and monitoring are completion-required core lanes; a non-
+  complete terminal state in any of them makes the batch `partial`. Nonterminal
+  lanes prevent publication, while justified behavior or forecast abstention
+  can coexist with completion only when every core lane is complete.
+- Complete central reconciliation before any immutable snapshot. Terminal
+  checkpoint corrections before snapshot use the append-only batch correction
+  ledger; after snapshot, preserve history and use a new corrective batch.
+- Portfolio fit requires supplied positions and mandate, suitability requires
+  governed client/jurisdiction facts, and detailed execution requires exact
+  venue, side, size, urgency, and timing. Never invent those inputs.
 
 ## 1. Evidence And Time
 
@@ -295,6 +320,11 @@ subagents for small tasks, sequential dependencies, or work whose coordination
 cost exceeds its benefit. Spawn only the minimum number needed, and do not let a
 subagent re-delegate unless the lead explicitly authorizes another bounded lane.
 
+A multi-symbol `do symbols research` batch normally qualifies for bounded
+parallel work when independent symbol groups or analytical lanes exist. Use the
+minimum useful workers automatically while preserving one cutoff and exclusive
+ownership; do not require the user to repeat a parallelism modifier.
+
 The lead agent must read every required skill and remains responsible for scope,
 safety, synthesis, verification, Git integration, and the final answer. Before
 delegating, define a common entity or instrument identity, decision cutoff,
@@ -344,6 +374,9 @@ Full workflow:
   model/evaluation changes, or material research and compliance policy.
 - Read repository context first and update `TODO.md` with scope, acceptance
   criteria, stages, verification, and commit boundaries before the first edit.
+- When resuming a long batch, resume its matching TODO/work branch, batch ID,
+  original cutoff, universe hash, and checkpoints; verify completed immutable
+  artifacts before skipping terminal lanes.
 - Use a single `fix/<slug>` or `feature/<slug>` branch. Keep the repository
   reviewable at each stage and preserve unrelated user changes.
 - Commit completed verified stages. Use `scripts/agent-quality-gate.sh --stage`
