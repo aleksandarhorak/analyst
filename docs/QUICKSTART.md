@@ -108,5 +108,4 @@ and unresolved questions.
 - Select another task from the [root task table](../README.md#choose-a-task).
 - Copy a detailed request from the [prompt cookbook](PROMPTS.md).
 - Diagnose an abstention or failed check with [troubleshooting](TROUBLESHOOTING.md).
-- Review data-source requirements in the provider process
-  [contract](../.codex/skills/acquire-point-in-time-financial-data/references/provider-contract.md).
+- Configure authorized sources with the [provider setup guide](PROVIDERS.md).

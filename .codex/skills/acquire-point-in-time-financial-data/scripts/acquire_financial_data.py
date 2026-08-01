@@ -11,6 +11,7 @@ import math
 import os
 from pathlib import Path
 import re
+import selectors
 import subprocess
 import sys
 import time
@@ -23,6 +24,7 @@ from urllib.request import Request, urlopen
 SCHEMA_VERSION = "evidence-packet-v1"
 ADAPTER_VERSION = "1.0.0"
 MAX_RESPONSE_BYTES = 20 * 1024 * 1024
+MAX_PROVIDER_STDERR_BYTES = 1024 * 1024
 DEFAULT_REGISTRY = Path(__file__).resolve().parents[1] / "references/instrument-registry-v1.json"
 PACKET_FIELDS = {
     "schema_version", "packet_id", "created_at", "decision_cutoff", "adapter",
@@ -48,6 +50,23 @@ SENSITIVE_KEYS = {
     "api_key", "apikey", "authorization", "password", "secret", "token", "access_token",
     "client_secret", "private_key",
 }
+SAFE_PROVIDER_ENV = {"PATH", "LANG", "LC_ALL", "TZ", "SSL_CERT_FILE", "SSL_CERT_DIR"}
+PROVIDER_RESPONSE_FIELDS = {
+    "schema_version", "request_id", "provider", "complete", "instrument",
+    "source_url", "rights", "observations", "errors",
+}
+PROVIDER_OBSERVATION_BASE_FIELDS = {
+    "field", "value", "unit", "currency", "classification", "event_time",
+    "published_at", "as_of", "source_locator",
+}
+PROVIDER_PRICE_FIELDS = PROVIDER_OBSERVATION_BASE_FIELDS | {
+    "revision", "session", "latency", "adjustment",
+}
+PROVIDER_NEWS_FIELDS = PROVIDER_OBSERVATION_BASE_FIELDS | {
+    "revision", "publisher", "canonical_url", "correction_status",
+    "document_id", "headline", "updated_at",
+}
+CORRECTION_STATES = {"original", "corrected", "retracted"}
 
 
 class AcquisitionError(RuntimeError):
@@ -260,6 +279,98 @@ def acquire_raw(
     return fetch_bytes(network_url, user_agent, timeout, retries)
 
 
+def provider_environment(allowed_names: list[str] | None) -> dict[str, str]:
+    """Build a minimal provider environment with explicit secret-name opt-in."""
+    names = set(SAFE_PROVIDER_ENV)
+    for name in allowed_names or []:
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+            raise AcquisitionError(f"invalid provider environment name: {name!r}")
+        if name not in os.environ:
+            raise AcquisitionError(f"allowed provider environment variable is unset: {name}")
+        names.add(name)
+    return {name: os.environ[name] for name in sorted(names) if name in os.environ}
+
+
+def run_bounded_provider(
+    command: list[str], payload: bytes, timeout: float, environment: dict[str, str]
+) -> tuple[int, bytes, bytes]:
+    """Run a provider without a shell and cap both output streams while reading."""
+    if not command:
+        raise AcquisitionError("provider command is empty")
+    executable = Path(command[0])
+    if not executable.is_absolute():
+        raise AcquisitionError("provider command must start with an absolute executable path")
+    try:
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=environment,
+        )
+    except OSError as error:
+        raise AcquisitionError(f"provider process failed to start: {error}") from error
+
+    assert process.stdin is not None
+    assert process.stdout is not None
+    assert process.stderr is not None
+    try:
+        process.stdin.write(payload)
+        process.stdin.close()
+    except BrokenPipeError:
+        pass
+
+    selector = selectors.DefaultSelector()
+    streams = {
+        process.stdout: ("stdout", MAX_RESPONSE_BYTES),
+        process.stderr: ("stderr", MAX_PROVIDER_STDERR_BYTES),
+    }
+    buffers = {"stdout": bytearray(), "stderr": bytearray()}
+    for stream in streams:
+        os.set_blocking(stream.fileno(), False)
+        selector.register(stream, selectors.EVENT_READ)
+
+    deadline = time.monotonic() + timeout
+    try:
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                process.kill()
+                process.wait()
+                raise AcquisitionError(f"provider process exceeded timeout={timeout:g}s")
+            events = selector.select(min(remaining, 0.25))
+            if not events and process.poll() is not None:
+                events = [(key, selectors.EVENT_READ) for key in selector.get_map().values()]
+            for key, _ in events:
+                stream = key.fileobj
+                name, limit = streams[stream]
+                try:
+                    chunk = os.read(stream.fileno(), 65536)
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(stream)
+                    continue
+                buffers[name].extend(chunk)
+                if len(buffers[name]) > limit:
+                    process.kill()
+                    process.wait()
+                    raise AcquisitionError(f"provider {name} exceeds {limit} bytes")
+        remaining = max(0.0, deadline - time.monotonic())
+        try:
+            return_code = process.wait(timeout=remaining)
+        except subprocess.TimeoutExpired as error:
+            process.kill()
+            process.wait()
+            raise AcquisitionError(f"provider process exceeded timeout={timeout:g}s") from error
+    finally:
+        selector.close()
+        process.stdout.close()
+        process.stderr.close()
+
+    return return_code, bytes(buffers["stdout"]), bytes(buffers["stderr"])
+
+
 def normalize_number(value: Any) -> Any:
     if not isinstance(value, str):
         return value
@@ -358,11 +469,12 @@ def build_packet(
         if claim_id in seen:
             errors.append(f"duplicate claim_id: {claim_id}")
         seen.add(claim_id)
-        try:
-            if temporal_after_cutoff(str(item["published_at"]), cutoff_time):
-                errors.append(f"after-cutoff evidence: {claim_id}")
-        except AcquisitionError as error:
-            errors.append(f"{claim_id}: {error}")
+        for time_field in ("event_time", "published_at", "as_of"):
+            try:
+                if temporal_after_cutoff(str(item[time_field]), cutoff_time):
+                    errors.append(f"after-cutoff evidence: {claim_id} ({time_field})")
+            except AcquisitionError as error:
+                errors.append(f"{claim_id} {time_field}: {error}")
         if len(str(item["published_at"])) == 10:
             if str(item["published_at"]) == cutoff_time.date().isoformat():
                 errors.append(f"cutoff-day date-granularity publication time is ambiguous: {claim_id}")
@@ -496,17 +608,23 @@ def validate_packet(packet: Any) -> list[str]:
                     validate_date_or_datetime(item[field], f"{label} {field}")
                 except AcquisitionError as error:
                     errors.append(str(error))
-            published = item["published_at"]
-            if isinstance(published, str):
+            for time_field in ("event_time", "published_at", "as_of"):
+                value = item[time_field]
+                if not isinstance(value, str):
+                    continue
                 try:
-                    if temporal_after_cutoff(published, cutoff):
-                        errors.append(f"after-cutoff evidence: {claim_id}")
-                    elif len(published) == 10 and published == cutoff.date().isoformat():
+                    if temporal_after_cutoff(value, cutoff):
+                        errors.append(f"after-cutoff evidence: {claim_id} ({time_field})")
+                    elif (
+                        time_field == "published_at"
+                        and len(value) == 10
+                        and value == cutoff.date().isoformat()
+                    ):
                         errors.append(
                             f"cutoff-day date-granularity publication time is ambiguous: {claim_id}"
                         )
                 except AcquisitionError as error:
-                    errors.append(f"{claim_id}: {error}")
+                    errors.append(f"{claim_id} {time_field}: {error}")
 
     quality = packet["quality"]
     quality_fields = {"status", "flags", "errors"}
@@ -796,40 +914,38 @@ def provider_request(args: argparse.Namespace) -> dict[str, Any]:
 def run_provider(args: argparse.Namespace) -> dict[str, Any]:
     registry_entry(args)
     if args.kind == "price":
-        if not args.currency or not args.session or args.maximum_age_seconds is None:
+        if not args.currency or not args.session:
             raise AcquisitionError(
                 "price provider requests require currency, session, and maximum_age_seconds"
             )
-        if args.maximum_age_seconds < 0:
-            raise AcquisitionError("maximum_age_seconds must be nonnegative")
+    if args.maximum_age_seconds is None or args.maximum_age_seconds < 0:
+        raise AcquisitionError("provider requests require nonnegative maximum_age_seconds")
     request_payload = provider_request(args)
     if args.input_file:
         raw = read_limited_file(args.input_file)
     else:
         if not args.command:
             raise AcquisitionError("provider requires --input-file or a command after --command")
-        try:
-            completed = subprocess.run(
-                args.command,
-                input=canonical_json(request_payload),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=args.timeout,
-                check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise AcquisitionError(f"provider process failed: {error}") from error
-        if completed.returncode != 0:
-            stderr_hash = sha256_bytes(completed.stderr)
+        return_code, stdout, stderr = run_bounded_provider(
+            args.command,
+            canonical_json(request_payload),
+            args.timeout,
+            provider_environment(args.provider_env),
+        )
+        if return_code != 0:
+            stderr_hash = sha256_bytes(stderr)
             raise AcquisitionError(
-                f"provider exited {completed.returncode}; stderr_sha256={stderr_hash}"
+                f"provider exited {return_code}; stderr_sha256={stderr_hash}"
             )
-        if len(completed.stdout) > MAX_RESPONSE_BYTES:
-            raise AcquisitionError(f"provider response exceeds {MAX_RESPONSE_BYTES} bytes")
-        raw = completed.stdout
+        raw = stdout
     data = load_json_bytes(raw, "provider")
     if not isinstance(data, dict) or data.get("schema_version") != "provider-response-v1":
         raise AcquisitionError("provider response schema mismatch")
+    response_field_errors = exact_fields(
+        data, PROVIDER_RESPONSE_FIELDS, PROVIDER_RESPONSE_FIELDS, "provider response"
+    )
+    if response_field_errors:
+        raise AcquisitionError("; ".join(response_field_errors))
     if data.get("request_id") != args.request_id:
         raise AcquisitionError("provider request_id mismatch")
     provider_instrument = data.get("instrument")
@@ -839,19 +955,39 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
     provider_errors = data.get("errors")
     if data.get("complete") is not True or not isinstance(provider_errors, list) or provider_errors:
         raise AcquisitionError("provider response is partial or contains errors")
-    if not data.get("provider") or not data.get("rights") or not data.get("source_url"):
+    if any(not nonempty_string(data.get(field)) for field in ("provider", "rights", "source_url")):
         raise AcquisitionError("provider provenance or rights are incomplete")
+    if not data["source_url"].startswith("https://"):
+        raise AcquisitionError("provider source_url must use HTTPS")
+    if re.search(
+        r"(?i)(?:api[_-]?key|access[_-]?token|authorization|password|secret)=",
+        data["source_url"],
+    ):
+        raise AcquisitionError("provider source_url contains a sensitive credential parameter")
     source_observations = data.get("observations")
-    if not isinstance(source_observations, list):
-        raise AcquisitionError("provider observations must be an array")
+    if not isinstance(source_observations, list) or not source_observations:
+        raise AcquisitionError("provider observations must be a nonempty array")
     records: list[dict[str, Any]] = []
+    cutoff = parse_datetime(args.decision_cutoff, "decision_cutoff")
     for index, item in enumerate(source_observations):
-        required = {
-            "field", "value", "unit", "currency", "classification", "event_time",
-            "published_at", "as_of", "source_locator",
-        }
-        if not isinstance(item, dict) or (missing := required - item.keys()):
-            raise AcquisitionError(f"provider observation {index} missing fields: {sorted(missing)}")
+        allowed = PROVIDER_PRICE_FIELDS if args.kind == "price" else PROVIDER_NEWS_FIELDS
+        item_errors = exact_fields(
+            item, PROVIDER_OBSERVATION_BASE_FIELDS, allowed, f"provider observation {index}"
+        )
+        if item_errors:
+            raise AcquisitionError("; ".join(item_errors))
+        assert isinstance(item, dict)
+        for field in ("field", "source_locator"):
+            if not nonempty_string(item.get(field)):
+                raise AcquisitionError(f"provider observation {index} has invalid {field}")
+        if item.get("classification") not in CLASSIFICATIONS:
+            raise AcquisitionError(f"provider observation {index} has invalid classification")
+        for field in ("event_time", "published_at", "as_of"):
+            moment = parse_datetime(item.get(field), f"provider observation {index} {field}")
+            if moment > cutoff:
+                raise AcquisitionError(
+                    f"provider observation {index} {field} is after the decision cutoff"
+                )
         if args.kind == "price":
             if item.get("latency") not in {"real_time", "delayed", "prior_close", "settlement", "indicative"}:
                 raise AcquisitionError(f"provider price observation {index} lacks valid latency")
@@ -865,21 +1001,60 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
                 raise AcquisitionError(f"provider price observation {index} session mismatch")
             if not nonempty_string(item.get("adjustment")):
                 raise AcquisitionError(f"provider price observation {index} lacks adjustment state")
-            cutoff = parse_datetime(args.decision_cutoff, "decision_cutoff")
-            as_of = parse_datetime(item.get("as_of"), f"provider observation {index} as_of")
+            if not nonempty_string(item.get("unit")):
+                raise AcquisitionError(f"provider price observation {index} lacks unit")
+            value = item.get("value")
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise AcquisitionError(f"provider price observation {index} has non-finite numeric value")
+            as_of = parse_datetime(item["as_of"], f"provider observation {index} as_of")
             age_seconds = (cutoff - as_of).total_seconds()
-            if age_seconds < 0:
-                raise AcquisitionError(f"provider price observation {index} is after the decision cutoff")
             if age_seconds > args.maximum_age_seconds:
                 raise AcquisitionError(
                     f"provider price observation {index} is stale: {age_seconds:.0f}s exceeds "
                     f"maximum_age_seconds={args.maximum_age_seconds}"
                 )
         if args.kind == "news":
-            news_fields = ("publisher", "canonical_url", "correction_status")
-            if any(not item.get(field) for field in news_fields):
+            news_fields = (
+                "publisher", "canonical_url", "correction_status", "document_id",
+                "headline", "updated_at",
+            )
+            if any(not nonempty_string(item.get(field)) for field in news_fields):
                 raise AcquisitionError(
-                    f"provider news observation {index} lacks publisher, canonical URL, or correction status"
+                    f"provider news observation {index} lacks publisher, canonical URL, document identity, "
+                    "headline, update time, or correction status"
+                )
+            if not item["canonical_url"].startswith("https://"):
+                raise AcquisitionError(f"provider news observation {index} canonical_url must use HTTPS")
+            if re.search(
+                r"(?i)(?:api[_-]?key|access[_-]?token|authorization|password|secret)=",
+                item["canonical_url"],
+            ):
+                raise AcquisitionError(
+                    f"provider news observation {index} canonical_url contains a credential parameter"
+                )
+            if item["correction_status"] not in CORRECTION_STATES:
+                raise AcquisitionError(
+                    f"provider news observation {index} has invalid correction_status"
+                )
+            updated_at = parse_datetime(
+                item["updated_at"], f"provider news observation {index} updated_at"
+            )
+            published_at = parse_datetime(
+                item["published_at"], f"provider news observation {index} published_at"
+            )
+            if updated_at < published_at:
+                raise AcquisitionError(
+                    f"provider news observation {index} updated_at precedes published_at"
+                )
+            if updated_at > cutoff:
+                raise AcquisitionError(
+                    f"provider news observation {index} updated_at is after the decision cutoff"
+                )
+            age_seconds = (cutoff - published_at).total_seconds()
+            if age_seconds > args.maximum_age_seconds:
+                raise AcquisitionError(
+                    f"provider news observation {index} is outside the requested window: "
+                    f"{age_seconds:.0f}s exceeds maximum_age_seconds={args.maximum_age_seconds}"
                 )
         records.append(
             observation(
@@ -896,7 +1071,10 @@ def run_provider(args: argparse.Namespace) -> dict[str, Any]:
                 source_locator=item["source_locator"],
                 metadata={
                     key: item[key]
-                    for key in ("session", "latency", "adjustment", "publisher", "canonical_url", "correction_status")
+                    for key in (
+                        "session", "latency", "adjustment", "publisher", "canonical_url",
+                        "correction_status", "document_id", "headline", "updated_at",
+                    )
                     if key in item
                 },
             )
@@ -980,6 +1158,11 @@ def build_parser() -> argparse.ArgumentParser:
     provider.add_argument("--currency")
     provider.add_argument("--session")
     provider.add_argument("--maximum-age-seconds", type=int)
+    provider.add_argument(
+        "--provider-env",
+        action="append",
+        help="explicit environment-variable name to pass to the provider process",
+    )
     provider.add_argument("--command", nargs=argparse.REMAINDER)
     provider.set_defaults(handler=run_provider)
 
@@ -1009,7 +1192,6 @@ def main() -> int:
         if getattr(args, "limit", 1) <= 0 or getattr(args, "limit", 1) > 5000:
             raise AcquisitionError("CFTC limit must be between 1 and 5000")
         packet = args.handler(args)
-        write_packet(packet, args.output)
         if packet["quality"]["status"] == "fail":
             for error in packet["quality"]["errors"]:
                 print(f"FAIL {error}", file=sys.stderr)
@@ -1022,6 +1204,7 @@ def main() -> int:
             for error in sorted(set(validation_errors)):
                 print(f"FAIL {error}", file=sys.stderr)
             return 1
+        write_packet(packet, args.output)
         return 0
     except (AcquisitionError, OSError, json.JSONDecodeError) as error:
         print(f"FAIL {error}", file=sys.stderr)

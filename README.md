@@ -130,6 +130,7 @@ decision without increasing the risk of a false or unsafe claim.
 
 - [Five-minute walkthrough](docs/QUICKSTART.md)
 - [Prompt cookbook](docs/PROMPTS.md)
+- [Data-provider setup](docs/PROVIDERS.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Provider process contract](.codex/skills/acquire-point-in-time-financial-data/references/provider-contract.md)
 - [Executable evaluation guide](evaluations/financial-agent/README.md)

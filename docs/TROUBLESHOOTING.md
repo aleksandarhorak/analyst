@@ -35,6 +35,7 @@ an aggregator.
 
 Official SEC, FRED/ALFRED, and CFTC acquisition may require network permission.
 Live price/news requires a separately authorized provider adapter.
+See the [provider setup guide](PROVIDERS.md) before live onboarding.
 
 ## An Evidence Packet Is Rejected
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -15,6 +16,7 @@ ADAPTER = (
     REPO_ROOT
     / ".codex/skills/acquire-point-in-time-financial-data/scripts/acquire_financial_data.py"
 )
+PREFLIGHT = REPO_ROOT / "scripts/preflight-provider.py"
 FIXTURES = REPO_ROOT / "evaluations/financial-data/fixtures"
 COMMON = [
     "--decision-cutoff",
@@ -30,13 +32,16 @@ PROVIDER_COMMON = [
 ]
 
 
-def run(arguments: list[str], expected: int = 0) -> subprocess.CompletedProcess[str]:
+def run(
+    arguments: list[str], expected: int = 0, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(
         [sys.executable, str(ADAPTER), *arguments],
         cwd=REPO_ROOT,
         text=True,
         capture_output=True,
         check=False,
+        env=env,
     )
     if completed.returncode != expected:
         raise AssertionError(
@@ -224,17 +229,20 @@ def main() -> int:
                 "--output", str(news_path),
                 "--request-id", "news-aapl-20250801",
                 "--kind", "news",
+                "--maximum-age-seconds", "86400",
             ]
         )
         news = read(news_path)
         assert news["observations"][0]["metadata"]["publisher"] == "Synthetic Wire"
         assert news["observations"][0]["metadata"]["correction_status"] == "original"
+        assert news["observations"][0]["metadata"]["document_id"] == "synthetic-document-1"
 
         price_fixture = json.loads((FIXTURES / "provider_price.json").read_text(encoding="utf-8"))
         wrong_identity_fixture = json.loads(json.dumps(price_fixture))
         wrong_identity_fixture["instrument"]["symbol"] = "MSFT"
         wrong_identity_path = output / "wrong-provider-identity.json"
         wrong_identity_path.write_text(json.dumps(wrong_identity_fixture), encoding="utf-8")
+        rejected_output_path = output / "must-not-write-rejected-packet.json"
         wrong_identity = run(
             [
                 "provider",
@@ -244,6 +252,7 @@ def main() -> int:
                 "--venue", "XNAS",
                 *PROVIDER_COMMON,
                 "--input-file", str(wrong_identity_path),
+                "--output", str(rejected_output_path),
                 "--request-id", "price-aapl-20250801",
                 "--kind", "price",
                 "--currency", "USD",
@@ -253,6 +262,7 @@ def main() -> int:
             expected=1,
         )
         assert "identity mismatch" in wrong_identity.stderr
+        assert not rejected_output_path.exists()
 
         for field, value, expected_text in (
             ("currency", "EUR", "currency mismatch"),
@@ -299,6 +309,241 @@ def main() -> int:
             expected=1,
         )
         assert "is stale" in stale.stderr
+
+        boundary_path = output / "freshness-boundary.json"
+        run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--input-file", str(FIXTURES / "provider_price.json"),
+                "--output", str(boundary_path),
+                "--request-id", "price-aapl-20250801",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "32",
+            ]
+        )
+
+        provider_process = FIXTURES / "provider_process.py"
+        process_command = [str(Path(sys.executable).resolve()), str(provider_process)]
+        process_env = os.environ.copy()
+        process_env["SYNTHETIC_UNRELATED_SECRET"] = "must-not-reach-child"
+        process_path = output / "process-provider.json"
+        run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--output", str(process_path),
+                "--request-id", "process-price",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--command", *process_command,
+            ],
+            env=process_env,
+        )
+        assert read(process_path)["source"]["authority"] == "synthetic-process-provider"
+
+        preflight = subprocess.run(
+            [
+                str(Path(sys.executable).resolve()),
+                str(PREFLIGHT),
+                "--registry-key", "AAPL",
+                "--price-maximum-age-seconds", "0",
+                "--news-maximum-age-seconds", "0",
+                "--command", *process_command,
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+            env=process_env,
+        )
+        assert preflight.returncode == 0, preflight.stderr
+        assert "PASS price" in preflight.stdout
+        assert "PASS news" in preflight.stdout
+        assert "temporary packets removed" in preflight.stdout
+
+        allowed_env = os.environ.copy()
+        allowed_env["SYNTHETIC_PROVIDER_KEY"] = "synthetic-provider-value"
+        allowed_path = output / "allowed-env-provider.json"
+        run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--output", str(allowed_path),
+                "--request-id", "allowed-env-price",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--provider-env", "SYNTHETIC_PROVIDER_KEY",
+                "--command", *process_command,
+            ],
+            env=allowed_env,
+        )
+
+        relative_command = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--request-id", "relative-command",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--command", "python3", str(provider_process),
+            ],
+            expected=1,
+        )
+        assert "absolute executable path" in relative_command.stderr
+
+        timeout = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--timeout", "0.05",
+                "--request-id", "timeout-price",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--command", *process_command,
+            ],
+            expected=1,
+        )
+        assert "exceeded timeout" in timeout.stderr
+
+        nonzero = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--request-id", "nonzero-price",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--command", *process_command,
+            ],
+            expected=1,
+        )
+        assert "stderr_sha256=" in nonzero.stderr
+        assert "confidential diagnostic" not in nonzero.stderr
+
+        invalid_json = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--request-id", "invalid-json-price",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "0",
+                "--command", *process_command,
+            ],
+            expected=1,
+        )
+        assert "valid UTF-8 JSON" in invalid_json.stderr
+
+        for field in ("event_time", "published_at", "as_of"):
+            future_fixture = json.loads(json.dumps(price_fixture))
+            future_fixture["observations"][0][field] = "2025-08-01T12:00:31Z"
+            future_path = output / f"future-{field}.json"
+            future_path.write_text(json.dumps(future_fixture), encoding="utf-8")
+            future_result = run(
+                [
+                    "provider",
+                    "--instrument-id", "sec:cik:0000320193:AAPL",
+                    "--symbol", "AAPL",
+                    "--asset-class", "equity",
+                    "--venue", "XNAS",
+                    *PROVIDER_COMMON,
+                    "--input-file", str(future_path),
+                    "--request-id", "price-aapl-20250801",
+                    "--kind", "price",
+                    "--currency", "USD",
+                    "--session", "regular",
+                    "--maximum-age-seconds", "60",
+                ],
+                expected=1,
+            )
+            assert f"{field} is after" in future_result.stderr
+
+        extra_provider = json.loads(json.dumps(price_fixture))
+        extra_provider["unexpected"] = True
+        extra_provider_path = output / "extra-provider-response.json"
+        extra_provider_path.write_text(json.dumps(extra_provider), encoding="utf-8")
+        extra_provider_result = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--input-file", str(extra_provider_path),
+                "--request-id", "price-aapl-20250801",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "60",
+            ],
+            expected=1,
+        )
+        assert "provider response has unsupported fields" in extra_provider_result.stderr
+
+        extra_observation = json.loads(json.dumps(price_fixture))
+        extra_observation["observations"][0]["unexpected"] = True
+        extra_observation_path = output / "extra-provider-observation.json"
+        extra_observation_path.write_text(json.dumps(extra_observation), encoding="utf-8")
+        extra_observation_result = run(
+            [
+                "provider",
+                "--instrument-id", "sec:cik:0000320193:AAPL",
+                "--symbol", "AAPL",
+                "--asset-class", "equity",
+                "--venue", "XNAS",
+                *PROVIDER_COMMON,
+                "--input-file", str(extra_observation_path),
+                "--request-id", "price-aapl-20250801",
+                "--kind", "price",
+                "--currency", "USD",
+                "--session", "regular",
+                "--maximum-age-seconds", "60",
+            ],
+            expected=1,
+        )
+        assert "provider observation 0 has unsupported fields" in extra_observation_result.stderr
 
         same_day = run(
             [
@@ -352,8 +597,8 @@ def main() -> int:
         assert "is unresolved" in unresolved.stderr
 
     print(
-        "PASS financial data adapters: registry, strict schema, cutoff, freshness, "
-        "units, complete identity, and secrets"
+        "PASS financial data adapters: registry, exact schemas, complete timestamps, "
+        "freshness, process isolation, bounded diagnostics, validate-before-write, and secrets"
     )
     return 0
 

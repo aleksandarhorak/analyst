@@ -33,7 +33,10 @@ permission to infer an instrument from ticker similarity.
    or news coverage.
 4. Run `scripts/acquire_financial_data.py` with explicit identifiers, cutoff,
    units, and fixture or network source. For live SEC requests set a descriptive
-   `FINANCIAL_DATA_USER_AGENT`; for FRED set `FRED_API_KEY`.
+   `FINANCIAL_DATA_USER_AGENT`; for FRED set `FRED_API_KEY`. Before onboarding a
+   licensed price/news adapter, follow `docs/PROVIDERS.md` and run the repository
+   preflight. Provider executables must be absolute and receive only explicitly
+   allowlisted runtime environment names.
 5. Preserve the raw SHA-256, source URL without secrets, access time, event/as-of
    time, first-known or publication time, revision identifiers, units, currency,
    classification, and rights note.

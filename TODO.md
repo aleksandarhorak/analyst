@@ -10,7 +10,7 @@
 - [x] Replace the long root guide with a concise task map and five-minute path.
 - [x] Move copy-ready recipes to `docs/PROMPTS.md`.
 - [x] Add a worked example, expected outputs, and troubleshooting guidance.
-- [ ] Document authorized provider onboarding and add a safe preflight diagnostic.
+- [x] Document authorized provider onboarding and add a safe preflight diagnostic.
 - [ ] Document real-candidate, controlled-holdout, and blinded-review operations.
 - [ ] Record licensed feeds, external candidates/reviewers, secret holdouts, and
   matured outcomes as external prerequisites; never fabricate their presence.
@@ -55,17 +55,24 @@
 - Validate local links, documentation claims, and the stage gate.
 - Commit boundary: `Add operational agent guides`.
 
-### Stage 3 — Provider And Evaluation Operations
+### Stage 3 — Provider Operations
 
 - Add provider onboarding documentation and an executable preflight diagnostic
   with synthetic command-path regressions.
+- Harden subprocess environment/output bounds, exact schemas, news identity and
+  timing, cutoff enforcement, and validate-before-write behavior.
+- Verify provider focused tests and the stage gate.
+- Commit boundary: `Secure provider onboarding`.
+
+### Stage 4 — Evaluation Operations
+
 - Add a real-candidate/hidden-holdout/blinded-review runbook and reviewer
   template or validation where useful.
 - Update durable operational limits without implying external services exist.
-- Verify provider/evaluation focused tests and the stage gate.
-- Commit boundary: `Operationalize provider and model evaluation setup`.
+- Verify evaluation focused tests and the stage gate.
+- Commit boundary: `Operationalize real model evaluation`.
 
-### Stage 4 — Delivery
+### Stage 5 — Delivery
 
 - Review the final diff, reset `TODO.md`, and run the full feature-branch gate.
 - Prepare a non-fast-forward merge into local `dev` and run the full gate.

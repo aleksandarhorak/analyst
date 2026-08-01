@@ -6,6 +6,9 @@ Invoke a provider adapter as an executable without a shell. Send one JSON object
 on standard input and require one JSON object on standard output. Credentials
 stay in the adapter's environment or secret store. Standard error may contain
 diagnostics but must not contain credentials, client data, or licensed payloads.
+The executable path must be absolute. The repository passes only a minimal safe
+environment plus names explicitly allowlisted with `--provider-env`; it never
+passes the whole parent environment.
 
 Request:
 
@@ -78,11 +81,20 @@ Response:
   no older than `maximum_age_seconds`.
 - Corporate-action adjustment state must be explicit for every price, including
   an explicit `unadjusted` value where applicable.
-- A `news` request needs original publisher, canonical URL, publication/update times,
-  headline/document identity, and correction/retraction state. A search snippet
-  is not an observation.
+- A `news` request needs original publisher, HTTPS canonical URL,
+  publication/update times, headline, stable document identity, and a correction
+  state of `original`, `corrected`, or `retracted`. Publication age must be no
+  greater than the request's `maximum_age_seconds`. A search snippet is not an
+  observation.
 - The provider name and rights note are mandatory. Store only what the license
-  permits; the evidence packet may retain a hash when payload retention is not
-  allowed.
-- The caller enforces timeout and output-size limits and never retries a
-  non-idempotent request. Acquisition retries use bounded exponential backoff.
+  permits. The current packet schema retains normalized observations; a provider
+  whose license prohibits that storage must not be onboarded until a governed
+  external-store or hash-only contract exists.
+- Top-level and observation objects use exact schemas; unexpected fields fail.
+  The caller independently validates event, publication, update, and as-of times
+  against the cutoff, enforces freshness, caps both stdout and stderr while
+  reading, and never retries a non-idempotent request. Acquisition retries use
+  bounded exponential backoff.
+- Production onboarding must reconcile any provider-specific instrument ID
+  through the adapter's authorized catalogue to the repository registry. The
+  repository does not infer vendor identity from ticker similarity.
