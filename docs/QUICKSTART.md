@@ -1,9 +1,10 @@
 # Five-Minute Agent Walkthrough
 
 This walkthrough shows what to request and what the agent should do. Entering
-the prompt takes less than five minutes; a complete current research batch can
-take longer because it may browse sources, validate evidence, update many files,
-and run tests.
+the prompt takes less than five minutes; a complete current research batch may
+take hours depending on universe size, source access, filings, product
+complexity, and valuation work. The workflow checkpoints progress, updates many
+files, and runs tests.
 
 ## Before You Start
 
@@ -27,7 +28,8 @@ do symbols research
 
 This is a repository-changing request. It instructs the agent to process every
 active row in [`../SYMBOLS.md`](../SYMBOLS.md), not only the most familiar or
-data-rich symbols.
+data-rich symbols. It means the complete applicable analytical pipeline, not a
+price/news scan or a list of optional follow-ups.
 
 ### 2. Identity resolution
 
@@ -38,31 +40,58 @@ platform index is not silently treated as a future, ETF, spot index, or CFD.
 Unresolved identities remain visible and stop instrument-specific market-data
 or execution conclusions.
 
-### 3. Evidence acquisition and verification
+### 3. Batch contract and resumable checkpoint
+
+The agent establishes one UTC batch ID, decision cutoff, active-universe hash,
+reporting currency, source hierarchy, and lane contract. It initializes
+`research/batches/<batch-id>/RUN.json` and a shared `MACRO.md`. If interrupted,
+it resumes batch-local per-symbol drafts, calculations, evidence/attempt
+ledgers, and shared reconciliation from the same branch, TODO, batch, cutoff,
+and unfinished lanes after
+verifying completed immutable artifacts. It never introduces evidence published
+after the preserved cutoff into the resumed decision.
+
+Independent symbol groups or analytical lanes may run in bounded parallel work.
+They share identity, cutoff, units, and evidence rules; the lead alone owns
+shared files, snapshots, Git operations, reconciliation, and final synthesis.
+
+### 4. Evidence acquisition and verification
 
 The agent sets one UTC decision cutoff and seeks point-in-time evidence. It
 preserves event, publication, access, and revision times; validates identifiers,
 currency, units, session, freshness, and rights; and excludes after-cutoff or
 failed packets.
 
-Current work may stop at `insufficient evidence` when an authorized quote/news
-adapter or decisive primary source is unavailable. This is expected behavior.
+One conclusion may stop at `insufficient evidence` when an authorized adapter
+or decisive source is unavailable, but the rest of that symbol's independent
+lanes and the other symbols continue. A missing price cannot excuse skipped
+filing, business/product, news, macro, behavior, thesis, or monitoring work.
 
-### 4. Analysis and forecast gate
+### 5. Full-depth analysis and forecast gate
 
-For each symbol, the workflow assesses the relevant fundamental, valuation,
-macro, news, behavioral, commodity, portfolio, and execution evidence. The
-standard horizons are one trading day, two weeks, one month, and two months.
+For each symbol, the workflow completes identity/evidence, price/market,
+fundamental or asset-specific product, valuation/scenario, news, macro
+transmission, observable behavior, impersonal thesis, directional forecast,
+downside/5x, and monitoring lanes. Every lane ends complete, justified
+abstention, blocked, or not applicable with evidence and a next action.
+
+Portfolio fit runs only with positions and a mandate; suitability only with
+governed client facts and jurisdiction; detailed execution only with exact
+instrument/venue, side, size, urgency, and time window. Those inputs are never
+invented.
 
 Up/flat/down probabilities are published only with a verified starting value,
 defined flat band, defensible calibration basis, and preregistration. Otherwise
 the horizon records `insufficient evidence` without invented percentages.
 
-### 5. Versioned outputs
+### 6. Versioned outputs
 
 The agent updates:
 
 - [`../REPORT.md`](../REPORT.md) for the complete current batch;
+- `research/batches/<batch-id>/RUN.json` and `MACRO.md` for resumable state and
+  the shared point-in-time regime, plus per-symbol drafts/calculations and
+  shared identity, preflight, reconciliation, publication, and correction files;
 - `research/symbols/<SYMBOL>/LATEST.md` for each latest view;
 - `research/symbols/<SYMBOL>/DECISIONS.md` append-only decision history;
 - `research/symbols/<SYMBOL>/history/` immutable snapshots and manifests;
@@ -72,17 +101,21 @@ The agent updates:
 It then runs the affected validators and follows the tested branch/merge
 workflow. It does not push unless the user separately says `publish`.
 
-### 6. Read the result
+The agent validates that every active symbol has terminal lane state and a
+current immutable snapshot for the same batch. External blockers make the batch
+`partial`; nonterminal lanes prevent publication.
+
+### 7. Read the result
 
 A safe summary can look like this:
 
 ```text
-Conclusion: Insufficient evidence for directional probabilities.
-Coverage: Every active watchlist row processed.
-Resolved identities: See the generated report.
-Current price packets: Unavailable for specified rows.
-Action: Preserve Observe status; resolve aliases and connect authorized data.
-Files: REPORT.md, per-symbol LATEST.md and DECISIONS.md, history snapshots.
+Conclusion: Full-depth batch finished with explicit partial status and blockers.
+Coverage: Every active row and every applicable analytical lane accounted for.
+Completed work: Fundamentals/product, news, macro transmission, and bounded
+thesis are preserved where sources allowed them.
+Abstentions/blockers: See the per-symbol lane and forecast records.
+Files: RUN.json, MACRO.md, REPORT.md, per-symbol state and immutable histories.
 ```
 
 Counts and conclusions belong in the generated [`../REPORT.md`](../REPORT.md),

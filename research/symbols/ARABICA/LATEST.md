@@ -2,40 +2,42 @@
 
 <!-- analyst-template: latest-v2 -->
 
-> Evidence-bounded batch result: research stopped before directional judgment.
+> Current official-source batch result with an evidence-bounded directional abstention.
 
 ## Instrument
 
 - Watchlist instrument: Arabica coffee platform alias
 - Asset class: Commodity
 - Watchlist description: Coffee exposure affected by weather, crop cycles, inventories, producer currencies, logistics, and futures positioning.
-- Exact venue/product: Unresolved platform alias — No exact ICE contract month, continuous roll rule, fund, or broker CFD is specified.
+- Exact venue/product: Unresolved alias — No exact ICE contract month, continuous roll rule, fund, or broker CFD is specified.
 - Reporting currency: USD
-- Batch ID / decision cutoff: `2026-08-01T004949Z` / `2026-08-01T00:49:49Z`
+- Batch ID / decision cutoff: `2026-08-01T023654Z` / `2026-08-01T02:36:54Z`
 
 ## Price And Evidence
 
 | Item | Value | Timestamp | Source/status |
 |---|---:|---|---|
-| Native price/value | — | `2026-08-01T00:49:49Z` | Unavailable (identity unresolved) |
-| USD price/value | — | `2026-08-01T00:49:49Z` | No conversion or quote used |
-| Market session / delay | — | `2026-08-01T00:49:49Z` | Cannot classify without an authorized provider packet |
+| Native price/value | — | `2026-08-01T02:36:54Z` | Unavailable (identity unresolved) |
+| USD price/value | — | `2026-08-01T02:36:54Z` | No conversion or quote used |
+| Market session / delay | — | `2026-08-01T02:36:54Z` | Cannot classify without an authorized packet and exact product |
 
 ## News And Catalysts
 
-The repository's versioned instrument registry and the watchlist definition were checked at the cutoff. No external price or news source can be selected safely until the exact spot reference, security, contract/month, fund, index, or broker CFD is specified.
+Identity research used [ARABICA primary reference](https://www.ice.com/products/15/Coffee-C-Futures/specs) and [a distinct official product/reference](https://www.ice.com/publicdocs/rulebooks/futures_us/8_Coffee.pdf) after fixing the shared cutoff. ICE Coffee C is a 37,500-pound physically delivered Arabica contract listed in specific months, while funds, continuous series and CFDs have different roll and liquidation mechanics. No exact month or product is specified. Because the exact exposure is unresolved, no product-specific price, news, curve, roll, settlement, delivery, margin, market response or catalyst conclusion is attached.
 
-Catalyst conclusion: **insufficient evidence**. No event surprise, expectation
-comparison, observed market response, or priced-in inference is asserted.
+Catalyst conclusion: **identity stop / insufficient evidence**.
 
 ## Fundamentals, Macro, And Market Behavior
 
-- Fundamental or supply/demand view: Insufficient evidence. Identity stop condition: No exact ICE contract month, continuous roll rule, fund, or broker CFD is specified. Contract, venue, currency/unit, settlement, roll, margin, and liquidation terms remain unknown where applicable.
-- Market regime: Not assigned; no point-in-time macro-vintage packet was used.
-- Observed behavior: None asserted; price alone was unavailable and psychology
-  is not inferred.
-- Candidate mechanism, counterevidence, and falsifier: No mechanism proposed.
-  A validated price/news/fundamental evidence set is required before analysis.
+- Fundamental, valuation, or supply/demand view: Not assigned. Physical balance, index methodology, curve/basis, roll, positioning and valuation depend on the exact spot reference, index version, contract month, fund or broker product; importing a nearby product would be a category error.
+- Market regime: Not assigned; no decision-time macro-vintage packet was used.
+- Observed behavior: None asserted. No validated price, volume, volatility,
+  participant-flow or positioning series was available, and psychology is not
+  inferred from a headline.
+- Candidate mechanism, counterevidence, and falsifier: No behavioral mechanism
+  changes the forecast. A validated start value, expectations, market response,
+  economically linked forecast/valuation or exact product, and an applicable
+  calibration base are required before a directional conclusion.
 
 ## Directional Probabilities
 
@@ -51,29 +53,33 @@ comparison, observed market response, or priced-in inference is asserted.
 ## Risk And 5x Leverage
 
 - Reference capital: — USD
-- Unlevered downside: —; no verified start value or scenario range.
-- Approximate 5x gross linear downside before costs: —; multiplication of an
-  unsupported scenario would create false precision.
+- Unlevered downside: —; no verified start value and reconciled scenario range.
+- Approximate 5x gross linear downside before costs: —; multiplying an unsupported
+  scenario would create false precision.
 - Financing, spread, slippage, gap, margin-call, and liquidation effects:
-  Unbounded without instrument/broker terms. A 20% adverse underlying move would
-  be about 100% of capital at 5x before costs, but this generic identity is not a
-  forecast or product-specific margin analysis.
+  Unbounded without broker terms and a validated exposure. A 20% adverse
+  underlying move would be about 100% of capital at 5x before costs, but that
+  generic identity is not a forecast or product-specific margin analysis.
 
 ## Decision
 
 - Status: Observe / evidence-bounded abstention
-- Thesis and strongest contrary case: No supported directional thesis. A current
-  unreviewed filing, catalyst, price move, valuation state, or exact product term
-  could materially change the view; that is the reason for abstention.
+- Thesis and strongest contrary case: The current public item is informative but
+  does not establish surprise, valuation, observed response or calibrated
+  direction. Missing or contradictory price, expectation, filing, product and
+  risk evidence could materially reverse any view.
 - Invalidation and next review: The insufficiency finding expires when exact
-  identity plus validated price, news, fundamental/physical, valuation, and risk
+  identity plus validated price, news, fundamental/physical, valuation and risk
   evidence are available; review no later than 2026-08-08.
-- Immutable snapshot: [Snapshot](history/2026-08-01T004949Z.md)
+- Immutable snapshot: [Snapshot](history/2026-08-01T023654Z.md)
 
 ## Data Lineage
 
-- Online-source access completed: `2026-08-01T00:50:51Z`
-- Evidence packet IDs: — (no usable `evidence-packet-v1` for a decision)
+- Online-source access completed: `2026-08-01T02:43:26Z`
+- Search window: `2026-07-25T02:36:54Z` through `2026-08-01T02:36:54Z`, with unresolved events
+  carried from `2026-06-02T02:36:54Z`
+- Evidence packet IDs and raw hashes: — (no usable decision packet)
 - Registered forecast IDs: — (no probabilities published)
+- Official source record(s): https://www.ice.com/products/15/Coffee-C-Futures/specs; https://www.ice.com/publicdocs/rulebooks/futures_us/8_Coffee.pdf
 - Identity registry: [instrument-registry-v1](../../../.codex/skills/acquire-point-in-time-financial-data/references/instrument-registry-v1.json)
 - Template version: 2

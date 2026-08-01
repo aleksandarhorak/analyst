@@ -14,6 +14,7 @@ DOCS = REPO_ROOT / "docs"
 LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.MULTILINE)
 EXPECTED_PROMPT_HEADINGS = {
+    "Complete Watchlist Batch",
     "Research One Company",
     "Value a Company",
     "Build a Complete Investment Thesis",

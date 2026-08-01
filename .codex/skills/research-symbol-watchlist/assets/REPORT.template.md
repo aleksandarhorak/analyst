@@ -1,21 +1,42 @@
 # Symbol Research Report
 
-<!-- analyst-template: report-v2 -->
+<!-- analyst-template: report-v3 -->
 
-> Initialized from `SYMBOLS.md`; no live batch has been completed. `—` means
-> unavailable or insufficient evidence, not zero.
+> Initialized from `SYMBOLS.md`; no full-depth live batch has been completed.
+> `—` means unavailable or a justified abstention, not zero.
 
 ## Batch Metadata
 
 - Batch ID / decision cutoff: —
 - Access completion time: —
+- Batch status: initialized
 - Reporting currency: USD
+- Research depth contract: full-depth-v1
+- Batch checkpoint: —
+- Shared macro artifact: —
 - Price policy: Not researched
 - News window: Not researched
 - Leverage: unlevered plus 5x gross linear exposure before financing, spread,
-  slippage, gaps, margin calls, and liquidation
+  slippage, path, gaps, margin calls, and liquidation
 - Capacity: Impersonal research; no order authority
 - Evidence packets / forecast registrations: Not researched
+
+## Machine-Readable Batch State
+
+```json
+{{REPORT_STATE_JSON}}
+```
+
+## Batch Completion Ledger
+
+| Symbol | Research state | Identity | Price | Fundamentals/product | Valuation/scenarios | News | Macro | Behavior | Thesis | Forecast | Downside/5x | Monitoring |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+{{COMPLETION_ROWS}}
+
+## Shared Macro Regime
+
+Not researched. A live v3 batch must preserve one point-in-time macro artifact
+and map its transmission into every applicable symbol.
 
 ## Universe And Current Evidence
 
@@ -25,11 +46,11 @@
 
 ## Directional Probabilities
 
-Cells are `up/flat/down`; each populated cell must total 100%. Horizons are 1
-trading day, 2 weeks, 1 month, and 2 months. Bands and calibration are in the
-linked detail file.
+Cells are `up/flat/down`; each populated cell totals 100%. Horizons are 1
+trading day, 2 weeks, 1 month, and 2 months. Bands, forecast IDs, calibration,
+and abstention reasons are in the linked detail file.
 
-| Symbol | 1 trading day | 2 weeks | 1 month | 2 months | Confidence |
+| Symbol | 1 trading day | 2 weeks | 1 month | 2 months | Confidence by horizon |
 |---|---:|---:|---:|---:|---|
 {{PROBABILITY_ROWS}}
 
@@ -41,6 +62,7 @@ linked detail file.
 
 ## Batch Limitations
 
-No current price, news, probability, or leveraged-risk conclusion has been
-completed. Run the `research-symbol-watchlist` workflow with current online
-evidence before using this report for a decision.
+This initialized report is not a completed research batch. A live run must
+finish every feasible full-depth lane, preserve explicit blockers, create
+current immutable snapshots, reconcile the batch state, and publish `complete`
+or `partial` accurately.

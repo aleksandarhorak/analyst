@@ -63,14 +63,33 @@ secrets, or copied research here.
   independent conflict adjudication. The recorded replay result is a harness
   verification only, not evidence of model quality.
 - `SYMBOLS.md` is the active-universe source of truth. The exact user request
-  `do symbols research` triggers current online price and news research for
-  every active row, with no silent omissions.
+  `do symbols research` triggers the potentially hours-long, resumable
+  `full-depth-v1` workflow for every active row. It composes every applicable
+  evidence, fundamentals/product, valuation/scenario, macro, news, behavior,
+  thesis, forecast, downside/5x, and monitoring lane; a missing dependency
+  blocks only dependent outputs and no symbol or feasible lane is silently
+  omitted.
 - Durable symbol memory lives under `research/symbols/<SYMBOL>/`: `LATEST.md`,
   append-only `DECISIONS.md`, and immutable `history/<UTC-batch-id>.md`
   snapshots. Snapshot writes use exclusive creation, a hash-chained
   `history/MANIFEST.jsonl`, decision-row verification, and atomic latest-file
   replacement. Templates are versioned and migrations preserve populated
   content. Root `REPORT.md` is the cross-symbol current summary.
+- Full-depth batches checkpoint one cutoff and active-universe hash in
+  `research/batches/<batch-id>/RUN.json` and preserve the shared macro regime in
+  `MACRO.md`. Batch-local per-symbol drafts, calculations, evidence/attempt
+  ledgers, shared-stage artifacts, and hash-chained pre-snapshot corrections
+  make interrupted work resumable. New live outputs use structured
+  `latest-v3`/`report-v3` state, price/session/unit fields, analytical-depth
+  fields, numeric asset-specific reconciliation and valuation schemas,
+  evidence-linked forecast registrations, FX arithmetic, central reconciliation
+  before snapshot, and terminal lane validation. `RUN.json` binds the current
+  correction-chain head and freezes ordered instrument and asset-class metadata
+  so drafts cannot select weaker schemas; prepare-before-apply records support
+  exact recovery after interruption. Core-lane abstention produces a `partial`,
+  never `complete`, batch, while justified behavior or forecast abstention can
+  coexist with completion. Immutable v2 artifacts remain valid history and are
+  never rewritten only to change versions.
 - Standard symbol horizons are 1 trading day, 2 weeks, 1 month, and 2 months.
   Each uses an explicit unlevered flat band and either up/flat/down
   probabilities totaling 100% or `insufficient evidence`. Reports use USD and
@@ -100,12 +119,14 @@ secrets, or copied research here.
 
 ## Operational Baseline And Limits
 
-- The first complete immutable operational batch is
+- The first complete immutable v2 coverage batch is
   `2026-08-01T004949Z`: all 38 active symbols were preserved, 31 SEC-listed
   identities were resolved, and 7 generic commodity/index aliases remained
   unresolved. With no authorized live quote/news adapter and incomplete
   filing, valuation, and risk evidence, every horizon correctly records
   `insufficient evidence`; no probabilities or risk numbers were invented.
+  It predates `full-depth-v1` and is not evidence that the new fundamentals,
+  valuation, macro, thesis, structured lane, or resumability gates were met.
 - The repository has no licensed live price/news feed or broker product
   catalogue. Exact instrument resolution and current decision-grade analysis
   therefore remain unavailable for some instruments until an authorized source

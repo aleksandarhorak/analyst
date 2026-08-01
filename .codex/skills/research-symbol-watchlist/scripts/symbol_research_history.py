@@ -14,10 +14,13 @@ import re
 import sys
 from typing import Any
 
+from symbol_research_batch import validate_run
+from symbol_research_contract import REQUIRED_LANES, validate_latest_v3
+from sync_symbol_research import parse_active_universe
+
 
 SYMBOL_PATTERN = re.compile(r"^[A-Z0-9._-]+$")
 BATCH_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{6}Z$")
-LATEST_MARKER = "<!-- analyst-template: latest-v2 -->"
 DECISIONS_MARKER = "<!-- analyst-template: decisions-v2 -->"
 MANIFEST_SCHEMA = "symbol-history-manifest-v1"
 DECISION_FIELDS = ("price_status", "horizon_view", "decision", "confidence", "next_review")
@@ -136,8 +139,56 @@ def snapshot(args: argparse.Namespace) -> int:
     if recorded_time < cutoff_time:
         raise HistoryError("recorded_at cannot precede decision_cutoff")
     draft = args.draft.read_text(encoding="utf-8")
-    if LATEST_MARKER not in draft or not draft.startswith(f"# {args.symbol} — Latest Research\n"):
-        raise HistoryError("draft must be the matching latest-v2 symbol document")
+    universe = {
+        record.symbol: record
+        for record in parse_active_universe(args.repo_root.resolve() / "SYMBOLS.md")
+    }
+    if args.symbol not in universe:
+        raise HistoryError("symbol is not in the active universe")
+    try:
+        state = validate_latest_v3(
+            draft,
+            args.symbol,
+            expected_asset_class=universe[args.symbol].asset_class,
+            require_terminal=True,
+        )
+    except RuntimeError as error:
+        raise HistoryError(f"draft fails latest-v3 full-depth validation: {error}") from error
+    if state["batch_id"] != args.batch_id or parse_time(state["decision_cutoff"], "state decision_cutoff") != cutoff_time:
+        raise HistoryError("draft batch ID or cutoff does not match snapshot arguments")
+    checkpoint_path = args.repo_root.resolve() / state["batch_checkpoint"]
+    if not checkpoint_path.is_file():
+        raise HistoryError("draft references a missing batch checkpoint")
+    checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+    checkpoint_failures = validate_run(args.repo_root.resolve(), checkpoint, final=False)
+    if checkpoint_failures:
+        raise HistoryError(f"batch checkpoint is invalid: {'; '.join(checkpoint_failures)}")
+    if checkpoint.get("batch_id") != args.batch_id or checkpoint.get("decision_cutoff") != state["decision_cutoff"]:
+        raise HistoryError("batch checkpoint ID or cutoff does not match draft")
+    frozen = next(
+        (record for record in checkpoint.get("active_universe", []) if record.get("symbol") == args.symbol),
+        None,
+    )
+    if not frozen or frozen.get("asset_class") != state["asset_class"]:
+        raise HistoryError("draft asset class does not match the frozen batch universe")
+    shared_stages = checkpoint.get("shared_stages", {})
+    for stage in ("identity_registry", "provider_preflight", "macro_regime"):
+        if shared_stages.get(stage, {}).get("status") not in {"complete", "blocked"}:
+            raise HistoryError(f"shared stage is not terminal before snapshot: {stage}")
+    if shared_stages.get("central_reconciliation", {}).get("status") != "complete":
+        raise HistoryError("central_reconciliation must be complete before immutable snapshots")
+    workspaces = checkpoint.get("symbol_workspaces", {}).get(args.symbol, {})
+    expected_draft = args.repo_root.resolve() / workspaces.get("latest_draft", "missing")
+    expected_decision = args.repo_root.resolve() / workspaces.get("decision_draft", "missing")
+    if args.draft.resolve() != expected_draft.resolve() or args.decision_record.resolve() != expected_decision.resolve():
+        raise HistoryError("snapshot inputs must use the governed batch-local draft paths")
+    checkpoint_lanes = checkpoint.get("symbol_lanes", {}).get(args.symbol, {})
+    evidence_ids = {item["id"] for item in state.get("evidence", [])}
+    for lane in REQUIRED_LANES:
+        if checkpoint_lanes.get(lane, {}).get("status") != state["lanes"][lane]["status"]:
+            raise HistoryError(f"batch checkpoint status differs for {args.symbol}/{lane}")
+        if not set(checkpoint_lanes.get(lane, {}).get("evidence_ids", [])).issubset(evidence_ids):
+            raise HistoryError(f"batch checkpoint evidence differs for {args.symbol}/{lane}")
     placeholder = "- Immutable snapshot: —"
     if placeholder not in draft:
         raise HistoryError("draft must contain the immutable snapshot placeholder")
