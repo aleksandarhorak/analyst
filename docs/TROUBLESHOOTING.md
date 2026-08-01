@@ -118,6 +118,7 @@ A model claim needs an actual frozen baseline and candidate, repeat runs,
 controlled hidden cases, hashes, critical-safety review, and qualified blinded
 human judgment. Forecast-skill claims also need genuine preregistered forecasts
 and independently verified matured outcomes.
+Follow the [real evaluation and outcome runbook](EVALUATION.md).
 
 ## A Parallel Lane Fails or Conflicts
 

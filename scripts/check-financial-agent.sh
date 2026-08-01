@@ -186,6 +186,12 @@ else
   fail 'executable financial-agent evaluation regressions failed'
 fi
 
+if python3 scripts/test-human-review.py; then
+  pass 'blinded human-review workflow regressions'
+else
+  fail 'blinded human-review workflow regressions failed'
+fi
+
 if python3 scripts/test-forecast-calibration.py; then
   pass 'forecast ledger and calibration regressions'
 else

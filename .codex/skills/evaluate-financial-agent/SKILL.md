@@ -33,7 +33,9 @@ performance without evaluation leakage.
    integrity, uncertainty calibration, risk/cost coverage, compliance behavior,
    actionability, citation quality, and reproducibility separately.
 7. Use deterministic checks for exact facts and calculations; use blinded human
-   review for judgment. Require reasons and adjudicate disagreements.
+   review for judgment. Use the hash-bound `review-bundle.jsonl` and
+   `scripts/check-human-review.py`; require at least two independent reviewers,
+   specific reasons, and independent adjudication of disagreements.
 8. Compare baseline and candidate per case, not only by average. Treat any
    critical safety regression as blocking.
 9. Record model/tool versions, case and response hashes, runs, failures,

@@ -56,9 +56,12 @@ secrets, or copied research here.
 - `scripts/run-financial-evals.py` withholds all assertions and expected values
   from candidate input, validates case structure, supports repeated runs and a
   fixed baseline, and records public/holdout, rubric, scorer, candidate,
-  response, and candidate-input hashes. The public suite contains 21 adverse
-  cases across the financial and safety lanes. The recorded replay result is a
-  harness verification only, not evidence of model quality.
+  response, candidate-input, and blinded-review-bundle hashes. The public suite
+  contains 28 adverse cases across the financial, safety, and parallel-work
+  lanes. Human review records bind to the exact results, cases, and response
+  bundle; acceptance requires at least two blinded independent reviewers and
+  independent conflict adjudication. The recorded replay result is a harness
+  verification only, not evidence of model quality.
 - `SYMBOLS.md` is the active-universe source of truth. The exact user request
   `do symbols research` triggers current online price and news research for
   every active row, with no silent omissions.
@@ -90,6 +93,10 @@ secrets, or copied research here.
   contact, payment, account, government-ID, sensitive-key, and private-key
   patterns, with positive and false-positive self-tests; it remains a backstop,
   not authorization to store client data.
+- For suitable multi-lane work, the lead agent may use the minimum necessary
+  subagents under one identity/cutoff/units contract. Assignments are read-only
+  by default with one writer per path; regulated judgments, Git integration,
+  verification, and final synthesis remain with the lead.
 
 ## Operational Baseline And Limits
 
@@ -102,7 +109,10 @@ secrets, or copied research here.
 - The repository has no licensed live price/news feed or broker product
   catalogue. Exact instrument resolution and current decision-grade analysis
   therefore remain unavailable for some instruments until an authorized source
-  is connected.
+  is connected. Provider onboarding now has a synthetic preflight, minimal
+  child environment, bounded output, exact response schemas, full news identity
+  and timing, and validate-before-write behavior; no provider is certified by
+  those controls alone.
 - No genuine registered forecasts have matured into verified outcomes, so live
   calibration is unmeasured. Evaluation also lacks a secret holdout, an actual
   model candidate run, and blinded human review; the current replay proves the

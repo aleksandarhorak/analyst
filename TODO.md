@@ -11,8 +11,8 @@
 - [x] Move copy-ready recipes to `docs/PROMPTS.md`.
 - [x] Add a worked example, expected outputs, and troubleshooting guidance.
 - [x] Document authorized provider onboarding and add a safe preflight diagnostic.
-- [ ] Document real-candidate, controlled-holdout, and blinded-review operations.
-- [ ] Record licensed feeds, external candidates/reviewers, secret holdouts, and
+- [x] Document real-candidate, controlled-holdout, and blinded-review operations.
+- [x] Record licensed feeds, external candidates/reviewers, secret holdouts, and
   matured outcomes as external prerequisites; never fabricate their presence.
 - [ ] Run focused regressions and the stage gate for every commit boundary.
 - [ ] Update durable memory, reset this task plan, and run the final gate.
