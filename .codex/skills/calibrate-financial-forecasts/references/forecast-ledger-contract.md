@@ -16,6 +16,12 @@ are decimal numbers, not percentages. The target follows the cutoff; creation
 must be no earlier than the cutoff and no later than the target. Evidence packet
 IDs use `sha256:<64 lowercase hex>`.
 
+At registration, provide each referenced packet file with repeated
+`--evidence-packet`. Its full `evidence-packet-v1` contract and content hash must
+validate; identity must match the forecast; packet cutoff/creation cannot cross
+the forecast cutoff/creation boundary. A hash string without the packet is not
+accepted by the writer.
+
 ## Outcome Input
 
 Required fields:
@@ -30,10 +36,17 @@ outcome. Use an evidence packet for the exact total-return or contract-consisten
 observation. Document closures, holidays, distributions, splits, symbol changes,
 rolls, settlement, and currency conversion in the treatment strings.
 
+Pass the referenced packet with `--outcome-packet`. It must validate, match the
+forecast identity and outcome hash, predate resolution, and contain a
+`realized_return` observation equal to the recorded return with an `as_of`
+inside the registered target/outcome interval.
+
 ## Integrity
 
-Each JSONL line contains `record_sha256`, calculated from canonical JSON without
-that field. Writers take an exclusive file lock, verify existing records, reject
+Each JSONL line contains an independent `record_sha256`, calculated from
+canonical JSON without that field. This detects record mutation but is not a
+hash chain; repository history provides the deletion/reordering audit layer.
+Writers take an exclusive file lock, verify existing records, reject
 duplicate forecast or outcome IDs, append one complete line, flush, and `fsync`.
 Verification rejects malformed JSON, hashes, schemas, duplicates, orphan
 outcomes, category mismatches, and impossible time ordering.
@@ -52,6 +65,10 @@ deployment.
   tracked separately if the calling workflow maintains them.
 - Reliability bins: for each class, compare average predicted probability with
   observed frequency in fixed-width bins and always publish bin counts.
+- Baseline comparison: score a disclosed fixed probability vector on the same
+  outcomes (uniform by default) and report candidate-minus-baseline deltas.
+- Sparse-sample limits: publish minimum sample/bin thresholds, warnings, and
+  worst individual log-loss/Brier cases; warnings prohibit skill claims.
 
 Aggregate metrics alone can conceal regime or asset failure. Always inspect the
 all-sample group and eligible horizon, asset-class, regime, and method groups.

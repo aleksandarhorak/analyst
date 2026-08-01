@@ -16,8 +16,8 @@ temporary notes.
 - [x] Expand public adverse cases across every analytical and safety lane.
 - [x] Add a versioned instrument registry and validate all adapter identities.
 - [x] Enforce evidence schema, freshness, session, currency, and timestamp rules.
-- [ ] Correct forecast-ledger integrity wording or implement the documented chain.
-- [ ] Expand client-data leak detection and synthetic self-tests.
+- [x] Correct forecast-ledger integrity wording or implement the documented chain.
+- [x] Expand client-data leak detection and synthetic self-tests.
 - [ ] Run focused validators and the stage quality gate after each implementation stage.
 - [ ] Commit each completed stage on the feature branch.
 - [ ] Run the complete current watchlist workflow or record explicit evidence-bounded abstentions.

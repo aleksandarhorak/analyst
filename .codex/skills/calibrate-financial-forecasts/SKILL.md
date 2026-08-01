@@ -20,19 +20,23 @@ registering a new model or changing band/outcome treatment.
    times, exact instrument, start value and unit, horizon, asset class, regime,
    unlevered flat-return band, up/flat/down probabilities, method version, and
    supporting `evidence-packet-v1` IDs.
-2. Register the record with `scripts/forecast_ledger.py register`. Probabilities
-   are decimals totaling 1.0; the flat band must contain zero.
+2. Register the record with `scripts/forecast_ledger.py register`, passing every
+   referenced packet file with `--evidence-packet`. Probabilities are decimals
+   totaling 1.0; the flat band must contain zero. A packet ID without its
+   validated content is insufficient.
 3. After the target time, acquire the realized total-return observation with
    point-in-time evidence. Make corporate-action, distribution, futures-roll,
    currency, session, and missing-market-day treatment explicit.
-4. Append one outcome with `resolve`. The script derives up/flat/down from the
-   registered band and rejects a second resolution.
+4. Append one outcome with `resolve --outcome-packet <path>`. The script verifies
+   the packet's hash, identity, time, and realized-return observation, derives
+   up/flat/down from the registered band, and rejects a second resolution.
 5. Run `verify`, then `score`. Report sample size, coverage/abstention, multiclass
    Brier loss, log loss, accuracy, and reliability bins. Break results out by
    horizon, asset class, regime, and method version when sample size permits.
-6. Compare against simple unconditional and prior-version baselines. Treat small
-   groups and empty bins as insufficient evidence; do not select a method on the
-   same holdout used for final comparison.
+6. Compare against the disclosed fixed-vector baseline emitted by `score` and,
+   where a genuinely prior sample exists, prior-version or unconditional
+   baselines. Treat emitted sparse-sample warnings and empty bins as insufficient
+   evidence; do not select a method on the same holdout used for final comparison.
 7. If performance breaches a predeclared threshold, investigate data drift,
    band definition, outcome treatment, regime, and method before recalibrating.
    Register a new method version; preserve the old records.

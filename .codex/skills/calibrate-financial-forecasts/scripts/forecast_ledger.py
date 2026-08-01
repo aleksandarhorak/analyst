@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import fcntl
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -235,11 +236,94 @@ def load_input(path: Path) -> dict[str, Any]:
     return value
 
 
+def load_evidence_packet(path: Path) -> dict[str, Any]:
+    packet = load_input(path)
+    acquisition_script = (
+        Path(__file__).resolve().parents[2]
+        / "acquire-point-in-time-financial-data/scripts/acquire_financial_data.py"
+    )
+    spec = importlib.util.spec_from_file_location("analyst_acquire_financial_data", acquisition_script)
+    if spec is None or spec.loader is None:
+        raise LedgerError("cannot load evidence-packet validator")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    errors = module.validate_packet(packet)
+    if errors:
+        raise LedgerError(f"invalid evidence packet {path}: {'; '.join(errors)}")
+    return packet
+
+
+def validate_packet_identity(packet: dict[str, Any], forecast: dict[str, Any], field: str) -> None:
+    if packet["instrument"]["id"] != forecast["instrument_id"]:
+        raise LedgerError(f"{field} instrument does not match forecast")
+    if packet["instrument"]["symbol"] != forecast["symbol"]:
+        raise LedgerError(f"{field} symbol does not match forecast")
+    if packet["instrument"]["asset_class"] != forecast["asset_class"]:
+        raise LedgerError(f"{field} asset class does not match forecast")
+
+
+def verify_forecast_evidence(record: dict[str, Any], paths: list[Path]) -> None:
+    if not paths:
+        raise LedgerError("register requires at least one --evidence-packet")
+    packets = [load_evidence_packet(path) for path in paths]
+    supplied_ids = [packet["packet_id"] for packet in packets]
+    if len(supplied_ids) != len(set(supplied_ids)):
+        raise LedgerError("duplicate --evidence-packet content ID")
+    if set(supplied_ids) != set(record["evidence_packet_ids"]):
+        raise LedgerError("evidence packet files do not match evidence_packet_ids")
+    forecast_cutoff = parse_time(record["decision_cutoff"], "decision_cutoff")
+    forecast_created = parse_time(record["created_at"], "created_at")
+    for packet in packets:
+        validate_packet_identity(packet, record, "forecast evidence packet")
+        packet_cutoff = parse_time(packet["decision_cutoff"], "packet decision_cutoff")
+        packet_created = parse_time(packet["created_at"], "packet created_at")
+        if packet_cutoff > forecast_cutoff:
+            raise LedgerError("forecast evidence packet cutoff is after forecast cutoff")
+        if packet_created > forecast_created:
+            raise LedgerError("forecast evidence packet was created after forecast creation")
+
+
+def verify_outcome_evidence(
+    record: dict[str, Any], forecast: dict[str, Any], path: Path
+) -> None:
+    packet = load_evidence_packet(path)
+    if packet["packet_id"] != record["outcome_packet_id"]:
+        raise LedgerError("outcome packet file does not match outcome_packet_id")
+    validate_packet_identity(packet, forecast, "outcome evidence packet")
+    resolved_at = parse_time(record["resolved_at"], "resolved_at")
+    if parse_time(packet["created_at"], "packet created_at") > resolved_at:
+        raise LedgerError("outcome evidence packet was created after resolution")
+    matching_returns = [
+        item
+        for item in packet["observations"]
+        if item["field"] == "realized_return"
+        and isinstance(item["value"], (int, float))
+        and not isinstance(item["value"], bool)
+        and math.isclose(float(item["value"]), float(record["realized_return"]), abs_tol=1e-12)
+    ]
+    if not matching_returns:
+        raise LedgerError("outcome evidence packet lacks the recorded realized_return")
+    target = parse_time(forecast["target_at"], "target_at")
+    outcome_as_of = parse_time(record["outcome_as_of"], "outcome_as_of")
+    supported_time = False
+    for item in matching_returns:
+        try:
+            observation_as_of = parse_time(item["as_of"], "realized_return as_of")
+        except LedgerError:
+            continue
+        if target <= observation_as_of <= outcome_as_of:
+            supported_time = True
+            break
+    if not supported_time:
+        raise LedgerError("outcome evidence packet does not support the target/outcome interval")
+
+
 def register(args: argparse.Namespace) -> int:
     record = load_input(args.record)
     record["schema_version"] = FORECAST_SCHEMA
     record.pop("record_sha256", None)
     validate_forecast(record, require_hash=False)
+    verify_forecast_evidence(record, args.evidence_packet)
     record["record_sha256"] = record_hash(record)
 
     def validate_existing(existing: list[dict[str, Any]]) -> None:
@@ -265,6 +349,7 @@ def resolve(args: argparse.Namespace) -> int:
     )
     record.pop("record_sha256", None)
     validate_outcome(record, forecasts, require_hash=False)
+    verify_outcome_evidence(record, forecasts[forecast_id], args.outcome_packet)
     record["record_sha256"] = record_hash(record)
 
     def validate_existing(existing: list[dict[str, Any]]) -> None:
@@ -285,7 +370,10 @@ def verify(args: argparse.Namespace) -> int:
 
 
 def metric_group(
-    pairs: list[tuple[dict[str, Any], dict[str, Any]]], bin_width: float, epsilon: float
+    pairs: list[tuple[dict[str, Any], dict[str, Any]]],
+    bin_width: float,
+    epsilon: float,
+    fixed_probabilities: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     brier = 0.0
     log_loss = 0.0
@@ -294,7 +382,9 @@ def metric_group(
         label: defaultdict(list) for label in CLASSES
     }
     for forecast, outcome in pairs:
-        probabilities = {label: float(forecast["probabilities"][label]) for label in CLASSES}
+        probabilities = fixed_probabilities or {
+            label: float(forecast["probabilities"][label]) for label in CLASSES
+        }
         actual = outcome["outcome_category"]
         brier += sum((probabilities[label] - (1.0 if label == actual else 0.0)) ** 2 for label in CLASSES)
         log_loss += -math.log(max(epsilon, min(1.0, probabilities[actual])))
@@ -331,6 +421,18 @@ def score(args: argparse.Namespace) -> int:
         raise LedgerError("bin_width must divide 1.0 exactly")
     if not 0 < args.epsilon < 0.5:
         raise LedgerError("epsilon must be between 0 and 0.5")
+    baseline_probabilities = {
+        "up": args.baseline_up,
+        "flat": args.baseline_flat,
+        "down": args.baseline_down,
+    }
+    baseline_probabilities = {
+        label: finite_number(baseline_probabilities[label], f"baseline.{label}")
+        for label in CLASSES
+    }
+    baseline_values = list(baseline_probabilities.values())
+    if any(value < 0 or value > 1 for value in baseline_values) or abs(sum(baseline_values) - 1) > 1e-12:
+        raise LedgerError("baseline probabilities must be in [0,1] and total 1.0")
     forecasts = index_forecasts(load_records(args.forecasts))
     outcomes = index_outcomes(load_records(args.outcomes), forecasts)
     pairs = [(forecast, outcomes[forecast_id]) for forecast_id, forecast in forecasts.items() if forecast_id in outcomes]
@@ -343,6 +445,14 @@ def score(args: argparse.Namespace) -> int:
         "bin_width": args.bin_width,
         "log_loss_epsilon": args.epsilon,
         "groups": {},
+        "baseline": {
+            "name": args.baseline_name,
+            "probabilities": baseline_probabilities,
+            "metrics": None,
+            "candidate_minus_baseline": None,
+        },
+        "limitations": [],
+        "worst_cases": [],
     }
     if pairs:
         grouped: dict[str, list[tuple[dict[str, Any], dict[str, Any]]]] = {"all": pairs}
@@ -352,6 +462,56 @@ def score(args: argparse.Namespace) -> int:
         result["groups"] = {
             name: metric_group(group, args.bin_width, args.epsilon) for name, group in grouped.items()
         }
+        candidate = result["groups"]["all"]
+        baseline = metric_group(
+            pairs, args.bin_width, args.epsilon, fixed_probabilities=baseline_probabilities
+        )
+        result["baseline"]["metrics"] = baseline
+        result["baseline"]["candidate_minus_baseline"] = {
+            "mean_brier": candidate["mean_brier"] - baseline["mean_brier"],
+            "mean_log_loss": candidate["mean_log_loss"] - baseline["mean_log_loss"],
+            "accuracy": candidate["accuracy"] - baseline["accuracy"],
+        }
+        cases: list[dict[str, Any]] = []
+        for forecast, outcome in pairs:
+            probabilities = {
+                label: float(forecast["probabilities"][label]) for label in CLASSES
+            }
+            actual = outcome["outcome_category"]
+            cases.append(
+                {
+                    "forecast_id": forecast["forecast_id"],
+                    "outcome_category": actual,
+                    "brier": sum(
+                        (probabilities[label] - (1.0 if label == actual else 0.0)) ** 2
+                        for label in CLASSES
+                    ),
+                    "log_loss": -math.log(
+                        max(args.epsilon, min(1.0, probabilities[actual]))
+                    ),
+                }
+            )
+        result["worst_cases"] = sorted(
+            cases, key=lambda item: (item["log_loss"], item["brier"]), reverse=True
+        )[: min(10, len(cases))]
+        if len(pairs) < args.minimum_sample:
+            result["limitations"].append(
+                f"resolved sample {len(pairs)} is below minimum_sample={args.minimum_sample}; "
+                "performance and calibration conclusions are insufficient"
+            )
+        sparse_bins = sum(
+            1
+            for label in CLASSES
+            for bucket in candidate["reliability"][label]
+            if bucket["count"] < args.minimum_bin_count
+        )
+        if sparse_bins:
+            result["limitations"].append(
+                f"{sparse_bins} populated reliability bin(s) have fewer than "
+                f"minimum_bin_count={args.minimum_bin_count} observations"
+            )
+    else:
+        result["limitations"].append("no resolved forecasts; performance is not measurable")
     rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -371,6 +531,10 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--outcomes", type=Path)
         command.add_argument("--record", type=Path, required=True)
         command.set_defaults(handler=handler)
+    commands.choices["register"].add_argument(
+        "--evidence-packet", type=Path, action="append", default=[]
+    )
+    commands.choices["resolve"].add_argument("--outcome-packet", type=Path, required=True)
 
     verify_command = commands.add_parser("verify")
     verify_command.add_argument("--forecasts", type=Path, required=True)
@@ -382,6 +546,12 @@ def build_parser() -> argparse.ArgumentParser:
     score_command.add_argument("--outcomes", type=Path, required=True)
     score_command.add_argument("--bin-width", type=float, default=0.1)
     score_command.add_argument("--epsilon", type=float, default=1e-15)
+    score_command.add_argument("--baseline-name", default="uniform-reference-v1")
+    score_command.add_argument("--baseline-up", type=float, default=1 / 3)
+    score_command.add_argument("--baseline-flat", type=float, default=1 / 3)
+    score_command.add_argument("--baseline-down", type=float, default=1 / 3)
+    score_command.add_argument("--minimum-sample", type=int, default=30)
+    score_command.add_argument("--minimum-bin-count", type=int, default=10)
     score_command.add_argument("--output", type=Path)
     score_command.set_defaults(handler=score)
     return parser
@@ -393,6 +563,8 @@ def main() -> int:
         raise SystemExit("register does not accept --outcomes")
     if args.command == "resolve" and args.outcomes is None:
         raise SystemExit("resolve requires --outcomes")
+    if args.command == "score" and (args.minimum_sample <= 0 or args.minimum_bin_count <= 0):
+        raise SystemExit("score sample thresholds must be positive")
     try:
         return args.handler(args)
     except (LedgerError, OSError, json.JSONDecodeError) as error:
