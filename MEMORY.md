@@ -26,7 +26,9 @@ secrets, or copied research here.
   valuation and forecasting, macroeconomics, news catalysts, portfolio risk,
   trade-execution planning, investment-thesis synthesis, broker-suitability
   gating, financial-agent evaluation, evidence-bounded market behavior, and a
-  full-universe symbol-research workflow.
+  full-universe symbol-research workflow. Operational specialist skills also
+  cover point-in-time acquisition, forecast calibration, commodity/futures
+  analysis, and client-data governance.
 - The research basis is tracked under `research/financial-analyst-agent/`: 41
   fully reviewed papers (10 trading, 10 company analysis, 10 economics, and 11
   news) plus current professional and regulatory primary sources as of
@@ -34,12 +36,25 @@ secrets, or copied research here.
 - Rules and duties vary by jurisdiction, capacity, client, product, and facts.
   Live work retrieves current primary rules and escalates legal or compliance
   conclusions to qualified reviewers.
+- `evidence-packet-v1` is the acquisition boundary. Standard-library adapters
+  support SEC companyfacts, explicit FRED/ALFRED real-time periods, and CFTC COT
+  PRE data; authorized price/news providers use a strict JSON process contract.
+  Credentials stay at runtime and failed, partial, misidentified, wrong-unit, or
+  after-cutoff packets are unusable. The design evidence is under
+  `research/financial-data-and-model-governance/` as of 2026-08-01.
+- Forecasts and outcomes are separate append-only hashed JSONL ledgers under
+  `forecasts/`. The calibration skill computes multiclass Brier/log loss,
+  accuracy, coverage, and reliability bins. `scripts/run-financial-evals.py`
+  executes public or controlled-holdout assertions and blocks critical failures.
 - `SYMBOLS.md` is the active-universe source of truth. The exact user request
   `do symbols research` triggers current online price and news research for
   every active row, with no silent omissions.
 - Durable symbol memory lives under `research/symbols/<SYMBOL>/`: `LATEST.md`,
   append-only `DECISIONS.md`, and immutable `history/<UTC-batch-id>.md`
-  snapshots. Root `REPORT.md` is the cross-symbol current summary.
+  snapshots. Snapshot writes use exclusive creation, a hash-chained
+  `history/MANIFEST.jsonl`, decision-row verification, and atomic latest-file
+  replacement. Templates are versioned and migrations preserve populated
+  content. Root `REPORT.md` is the cross-symbol current summary.
 - Standard symbol horizons are 1 trading day, 2 weeks, 1 month, and 2 months.
   Each uses an explicit unlevered flat band and either up/flat/down
   probabilities totaling 100% or `insufficient evidence`. Reports use USD and
@@ -49,6 +64,15 @@ secrets, or copied research here.
   horizon-specific evidence with alternatives and falsifiers. Its 11-paper
   research basis, including institutional-herding counterevidence, is tracked
   under `research/market-behavior/` as of 2026-07-31.
+- Commodity/futures work requires exact contract or broker-product identity,
+  physical balance, curve/basis/roll, settlement/delivery, positioning lag, and
+  margin/liquidation analysis. Generic commodity and index aliases do not imply
+  a particular future, cash index, fund, or CFD.
+- Real client identity, financial facts, positions, accounts, tax data, and
+  communications are prohibited from repository files, Git history, symbol or
+  forecast memory, evaluations, and logs. Personalized workflows require an
+  approved secure client system, minimization, redacted references, lifecycle
+  controls, current jurisdictional review, and synthetic repository tests.
 
 ## Development Workflow
 
@@ -62,4 +86,5 @@ secrets, or copied research here.
   user's explicit instruction.
 - `scripts/check-financial-agent.sh` is the repository integrity check for skill
   inventory, metadata, stale policy, research manifests, active-symbol memory,
-  report coverage, probability arithmetic, and adverse fixtures.
+  report coverage, probability arithmetic, adapter/evaluation/calibration
+  regressions, immutable history/migrations, and client-data leak safeguards.

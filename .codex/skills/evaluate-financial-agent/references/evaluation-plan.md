@@ -38,3 +38,13 @@ client facts, conflicts, refusals, and abstention as applicable.
 - Regressions and root causes:
 - Accept/reject decision and threshold:
 - New regression fixtures and holdout protection:
+
+## Executable Run
+
+- Public cases path and SHA-256:
+- Holdout custodian/path (do not copy contents here):
+- Candidate command or frozen-response path:
+- Runner command and output directory:
+- Model version, tool version, run ID, and repeat count:
+- `results.json` / `summary.md` review:
+- Critical-failure gate result:

@@ -1,0 +1,31 @@
+{
+  "schema_version": "provider-response-v1",
+  "request_id": "price-aapl-20250801",
+  "provider": "fixture-provider",
+  "complete": true,
+  "instrument": {
+    "id": "figi:BBG000B9XRY4",
+    "symbol": "AAPL",
+    "venue": "XNAS",
+    "asset_class": "equity"
+  },
+  "source_url": "https://provider.example/records/price-aapl-20250801",
+  "rights": "Synthetic fixture; redistribution allowed",
+  "observations": [
+    {
+      "field": "last_trade",
+      "value": 200.25,
+      "unit": "USD_per_share",
+      "currency": "USD",
+      "classification": "reported_fact",
+      "event_time": "2025-08-01T11:59:58Z",
+      "published_at": "2025-08-01T11:59:58Z",
+      "as_of": "2025-08-01T11:59:58Z",
+      "session": "regular",
+      "latency": "real_time",
+      "adjustment": "unadjusted",
+      "source_locator": "trade:synthetic-1"
+    }
+  ],
+  "errors": []
+}

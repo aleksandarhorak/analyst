@@ -19,41 +19,49 @@ the templates in `assets/` and the synchronization helper in `scripts/`.
 
 1. Read `SYMBOLS.md`, establish the batch cutoff, and run:
    `python3 .codex/skills/research-symbol-watchlist/scripts/sync_symbol_research.py --sync`.
-   Retain folders for archived symbols; never erase decision history.
+   Then run `migrate_symbol_templates.py --check`. Retain folders for archived
+   symbols; never erase decision history.
 2. Resolve every alias to an exact security, venue, share class, index, futures
    contract, fund, spot reference, or broker product. For a broker CFD or
    platform alias, require its contract specification. Mark unresolved identity
    as `insufficient evidence`; do not attach another instrument's price.
 3. Browse current online sources for every symbol. Use
-   `verify-financial-evidence` to record source, price/value, quote currency,
-   session status, and price timestamp. A delayed or prior close is not a live
-   quote and must be labeled accurately.
+   `acquire-point-in-time-financial-data` for supported official or authorized
+   feeds, then `verify-financial-evidence` to map packet IDs and raw hashes to
+   source, price/value, quote currency, session status, and price timestamp. A
+   delayed or prior close is not a live quote and must be labeled accurately.
 4. Search for current news for every symbol. Use `analyze-news-catalysts` to
    verify material events, publication/event times, novelty, prior expectation,
    observed response, and fundamental transmission. If none is found, record
    sources and the searched window rather than inventing a catalyst.
-5. Add relevant company fundamentals and valuation for stocks, macro and
-   supply/demand drivers for commodities and indices, and broader market regime.
-   Reuse current verified research; do not rebuild a full model from headlines.
+5. Add relevant company fundamentals and valuation for stocks and the broader
+   market regime. For commodities and any futures-based index product, use
+   `analyze-commodities-and-futures` for physical drivers, curve/basis, roll,
+   positioning lag, contract, settlement, margin, and delivery. Reuse current
+   verified research; do not rebuild a full model from headlines.
 6. Use `analyze-market-behavior` only with observable, participant- and
    horizon-specific evidence. Record alternatives and a falsifier.
 7. Estimate the four required horizons: 1 trading day, 2 weeks, 1 month, and 2
    months. For each, define an unlevered flat-return band and either provide
    up/flat/down probabilities summing exactly to 100% or show `—` with
-   `insufficient evidence`. Never invent percentages to fill the table.
+   `insufficient evidence`. Never invent percentages to fill the table. Before
+   publishing populated probabilities, register them with
+   `calibrate-financial-forecasts` and record forecast IDs in `LATEST.md`.
 8. Use `manage-portfolio-risk` for downside and 5x exposure. Show unlevered loss
    separately from 5x gross linear P&L before financing, spread, slippage, gap,
    margin-call, and liquidation effects. Do not imply that 5x improves the
    forecast.
-9. Write an immutable snapshot to
-   `research/symbols/<SYMBOL>/history/<UTC-batch-id>.md`, update `LATEST.md`, and
-   append one decision row to `DECISIONS.md`. Preserve prior timestamps and
-   conclusions without hindsight edits.
+9. Prepare a complete `latest-v2` draft and decision JSON. Run
+   `scripts/symbol_research_history.py snapshot`; it exclusively creates
+   `history/<UTC-batch-id>.md`, appends the hash-chained `MANIFEST.jsonl` and
+   decision row, then atomically updates `LATEST.md`. Run `verify`. Never write,
+   replace, or delete historical artifacts by hand.
 10. Replace `REPORT.md` with the complete batch summary. Every active symbol
     must have price status, evidence status, four horizons, confidence, risk,
     and a relative link to its `LATEST.md`. Reconcile coverage before reporting.
-11. Run the helper with `--check`, validate all links and probability sums, and
-    state any unavailable data, unresolved aliases, or incomplete analyses.
+11. Run the synchronization helper with `--check`, migration/history
+    verification, validate all links and probability sums, and state any
+    unavailable data, unresolved aliases, or incomplete analyses.
 
 ## Probability Contract
 

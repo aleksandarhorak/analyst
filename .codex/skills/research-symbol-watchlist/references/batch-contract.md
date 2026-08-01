@@ -32,11 +32,21 @@
 - `research/symbols/<SYMBOL>/LATEST.md`: current decision-time snapshot.
 - `research/symbols/<SYMBOL>/DECISIONS.md`: append-only decision index.
 - `research/symbols/<SYMBOL>/history/<batch-id>.md`: immutable full snapshot.
+- `research/symbols/<SYMBOL>/history/MANIFEST.jsonl`: hash-chained snapshot and
+  decision-row manifest.
 - `REPORT.md`: complete cross-symbol current summary linking each `LATEST.md`.
 
-On a new run, create the history snapshot before replacing `LATEST.md`. Append
-rather than rewrite a prior decision. If an earlier record was wrong, add a
-dated correction linked to the original.
+On a new run, prepare a complete `latest-v2` draft and decision JSON, then use
+`scripts/symbol_research_history.py snapshot`. It exclusively creates the
+history file, appends the hash-chained manifest and decision row, and atomically
+replaces `LATEST.md`. Never write these four operations by hand. Run `verify`
+afterward. If an earlier record was wrong, add a dated correction linked to the
+original; never rewrite or delete the prior snapshot or manifest line.
+
+Use `scripts/migrate_symbol_templates.py --apply` only for a versioned,
+non-destructive migration. It may insert a marker or a missing section but must
+preserve every existing byte of substantive research. Unknown/newer versions
+stop the migration.
 
 ## Probability Record
 
