@@ -284,6 +284,47 @@ Default posture: research, decide, implement, verify, and report. Ask only when
 the missing answer cannot be discovered and an assumption would be destructive,
 unsafe, regulated, or materially change the result.
 
+### Parallel Agent Work
+
+Use available subagents when a task contains at least two bounded, genuinely
+independent workstreams and parallel execution would materially reduce latency
+or add useful independent verification. Good candidates include separate source
+reviews, non-overlapping symbol groups, distinct analytical lanes, independent
+calculation checks, and isolated test or documentation audits. Do not spawn
+subagents for small tasks, sequential dependencies, or work whose coordination
+cost exceeds its benefit. Spawn only the minimum number needed, and do not let a
+subagent re-delegate unless the lead explicitly authorizes another bounded lane.
+
+The lead agent must read every required skill and remains responsible for scope,
+safety, synthesis, verification, Git integration, and the final answer. Before
+delegating, define a common entity or instrument identity, decision cutoff,
+horizon, currency and units, capacity, source hierarchy, privacy classification,
+evidence standard, acceptance criteria, return format, and exclusive ownership.
+State the allowed files, systems, and read/write authority. Subagents must read
+the skills matching their bounded assignments. Use read-only assignments by
+default. If subagents edit files, give each one an exclusive file set and never
+allow concurrent edits to the same file or shared ledger. Unless explicitly
+assigned a serialized integration step, subagents must not switch branches,
+stage, commit, merge, reset, run shared generators, or modify unassigned files.
+
+Never delegate final suitability, legal/compliance, client-data authorization,
+market-integrity, order-authority, or publication decisions. Do not send real
+client data, credentials, material non-public information, licensed payloads,
+or protected holdouts to a subagent unless the same approved secure boundary,
+authorization, and least-privilege controls explicitly cover it. Repository
+subagents never place, route, modify, or cancel orders.
+
+The lead agent must reconcile contradictions, normalize units and timestamps,
+review material citations and calculations, detect duplicate or missing
+coverage, inspect Git status and every diff, and serialize stateful tests and Git
+mutations. Each subagent returns a completed, partial, or failed status plus its
+sources, calculations, assumptions, limitations, contradictions, and files
+touched. The lead waits for required lanes or marks them unavailable, reruns
+applicable privacy and quality validators, and owns the final synthesis. Never
+concatenate unchecked outputs, average away contradictory sources, or hide a
+missing lane. Parallel outputs are evidence inputs, not independent authority
+and not a substitute for one coherent decision.
+
 Use `MEMORY.md` only for durable architecture decisions, data constraints,
 evaluation baselines, workflow facts, and resolved limitations. Use `TODO.md`
 only for active full-workflow implementation.

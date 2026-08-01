@@ -206,6 +206,14 @@ for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority 
   fi
 done
 
+for phrase in 'Use available subagents' 'minimum number needed' 'same file or shared' 'Never delegate final suitability' 'owns the final synthesis'; do
+  if grep -Fq "$phrase" AGENTS.md; then
+    pass "parallel-work guardrail is present: ${phrase}"
+  else
+    fail "parallel-work guardrail is missing: ${phrase}"
+  fi
+done
+
 if [ "$failures" -ne 0 ]; then
   printf '\nFinancial agent check failed with %d issue(s).\n' "$failures" >&2
   exit 1

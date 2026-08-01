@@ -51,7 +51,7 @@ def main() -> int:
         assert accepted.stdout.startswith("ACCEPT")
         result = json.loads((file_run / "results.json").read_text(encoding="utf-8"))
         assert result["decision"] == "accept"
-        assert result["case_count"] == 21
+        assert result["case_count"] == 28
         assert result["critical_failure_count"] == 0
         assert result["score"] == 1.0
         assert result["repeat_count"] == 1
