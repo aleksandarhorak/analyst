@@ -9,6 +9,10 @@ import sys
 
 
 case = json.load(sys.stdin)
+allowed_fields = {"id", "lane", "prompt", "decision_cutoff", "context"}
+unexpected = set(case) - allowed_fields
+if unexpected:
+    raise RuntimeError(f"candidate received private scoring fields: {sorted(unexpected)}")
 responses_path = Path(__file__).resolve().with_name("passing-responses.jsonl")
 responses = {
     value["id"]: value

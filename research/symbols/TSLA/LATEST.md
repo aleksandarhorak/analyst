@@ -1,42 +1,45 @@
 # TSLA — Latest Research
 
 <!-- analyst-template: latest-v2 -->
-> Placeholder created from `SYMBOLS.md`; no live research has been completed.
+
+> Evidence-bounded batch result: research stopped before directional judgment.
 
 ## Instrument
 
 - Watchlist instrument: Tesla, Inc.
 - Asset class: Stock
 - Watchlist description: Electric vehicles, energy generation and storage, charging, software, and automation initiatives.
-- Exact venue/product: Unresolved
+- Exact venue/product: Tesla, Inc. — common_stock on XNAS; instrument `sec:cik:0001318605:TSLA`
 - Reporting currency: USD
-- Batch ID / decision cutoff: —
+- Batch ID / decision cutoff: `2026-08-01T004949Z` / `2026-08-01T00:49:49Z`
 
 ## Price And Evidence
 
 | Item | Value | Timestamp | Source/status |
 |---|---:|---|---|
-| Native price/value | — | — | Not researched |
-| USD price/value | — | — | Not researched |
-| Market session / delay | — | — | Not researched |
+| Native price/value | — | `2026-08-01T00:49:49Z` | Unavailable (no authorized packet) |
+| USD price/value | — | `2026-08-01T00:49:49Z` | No conversion or quote used |
+| Market session / delay | — | `2026-08-01T00:49:49Z` | Cannot classify without an authorized provider packet |
 
 ## News And Catalysts
 
-Not researched. A live run must record the search window, verified events or an
-explicit no-material-news result, source links, timestamps, surprise, and
-observed response.
+Identity resolved from the [SEC ticker/exchange file](https://www.sec.gov/files/company_tickers_exchange.json), accessed 2026-08-01T00:33:11Z. The [SEC EDGAR issuer page](https://www.sec.gov/edgar/browse/?CIK=1318605) was included in the current filing search for `2026-06-02T00:00:00Z` through `2026-08-01T00:49:49Z`. The search establishes public-source availability, but every filing and exhibit was not fully reconciled and no authorized news packet was acquired; therefore this is not a no-material-news conclusion.
+
+Catalyst conclusion: **insufficient evidence**. No event surprise, expectation
+comparison, observed market response, or priced-in inference is asserted.
 
 ## Fundamentals, Macro, And Market Behavior
 
-- Fundamental or supply/demand view: Not researched.
-- Market regime: Not researched.
-- Observed behavior: Not researched.
-- Candidate mechanism, counterevidence, and falsifier: Not researched.
+- Fundamental or supply/demand view: Insufficient evidence. No authorized current price/news provider is configured, and no reconciled current filing, fundamental model, valuation, volume, volatility, flow, or positioning packet was completed.
+- Market regime: Not assigned; no point-in-time macro-vintage packet was used.
+- Observed behavior: None asserted; price alone was unavailable and psychology
+  is not inferred.
+- Candidate mechanism, counterevidence, and falsifier: No mechanism proposed.
+  A validated price/news/fundamental evidence set is required before analysis.
 
 ## Directional Probabilities
 
-`—` means insufficient evidence, not 0%. `Up/flat/down` must total 100% whenever
-percentages are supplied.
+`—` means insufficient evidence, not 0%. No distribution was registered.
 
 | Horizon | Start | Flat band | Up | Flat | Down | Calibration | Confidence |
 |---|---:|---:|---:|---:|---:|---|---|
@@ -48,20 +51,29 @@ percentages are supplied.
 ## Risk And 5x Leverage
 
 - Reference capital: — USD
-- Unlevered downside: —
-- Approximate 5x gross linear downside before costs: —
-- Financing, spread, slippage, gap, margin-call, and liquidation effects: Not
-  researched; 5x does not improve forecast quality.
+- Unlevered downside: —; no verified start value or scenario range.
+- Approximate 5x gross linear downside before costs: —; multiplication of an
+  unsupported scenario would create false precision.
+- Financing, spread, slippage, gap, margin-call, and liquidation effects:
+  Unbounded without instrument/broker terms. A 20% adverse underlying move would
+  be about 100% of capital at 5x before costs, but this generic identity is not a
+  forecast or product-specific margin analysis.
 
 ## Decision
 
-- Status: Observe / not researched
-- Thesis and strongest contrary case: —
-- Invalidation and next review: —
-- Immutable snapshot: —
+- Status: Observe / evidence-bounded abstention
+- Thesis and strongest contrary case: No supported directional thesis. A current
+  unreviewed filing, catalyst, price move, valuation state, or exact product term
+  could materially change the view; that is the reason for abstention.
+- Invalidation and next review: The insufficiency finding expires when exact
+  identity plus validated price, news, fundamental/physical, valuation, and risk
+  evidence are available; review no later than 2026-08-08.
+- Immutable snapshot: [Snapshot](history/2026-08-01T004949Z.md)
 
 ## Data Lineage
 
-- Evidence packet IDs: —
-- Registered forecast IDs: —
+- Online-source access completed: `2026-08-01T00:50:51Z`
+- Evidence packet IDs: — (no usable `evidence-packet-v1` for a decision)
+- Registered forecast IDs: — (no probabilities published)
+- Identity registry: [instrument-registry-v1](../../../.codex/skills/acquire-point-in-time-financial-data/references/instrument-registry-v1.json)
 - Template version: 2

@@ -4,7 +4,7 @@
   "provider": "fixture-provider",
   "complete": true,
   "instrument": {
-    "id": "figi:BBG000B9XRY4",
+    "id": "sec:cik:0000320193:AAPL",
     "symbol": "AAPL",
     "venue": "XNAS",
     "asset_class": "equity"

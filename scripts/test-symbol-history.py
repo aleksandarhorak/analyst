@@ -75,6 +75,15 @@ def main() -> int:
         run(MIGRATE, ["--check", "--repo-root", str(root)])
         reapplied = run(MIGRATE, ["--apply", "--repo-root", str(root)])
         assert "0 file(s) changed" in reapplied.stdout
+        report_path = root / "REPORT.md"
+        report_path.write_text(
+            report_path.read_text(encoding="utf-8").replace(
+                "- Evidence packets / forecast registrations: Not researched",
+                "- Evidence packets / forecast registrations: 0 / 0",
+            ),
+            encoding="utf-8",
+        )
+        run(MIGRATE, ["--check", "--repo-root", str(root)])
 
         draft = root / "draft.md"
         draft.write_text(latest.read_text(encoding="utf-8"), encoding="utf-8")
@@ -120,7 +129,10 @@ def main() -> int:
         )
         assert "snapshot hash mismatch" in tampered.stderr
 
-    print("PASS symbol history: preserving migration, exclusive snapshots, chain, rows, and tamper detection")
+    print(
+        "PASS symbol history: preserving migration and populated metadata, exclusive "
+        "snapshots, chain, rows, and tamper detection"
+    )
     return 0
 
 

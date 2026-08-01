@@ -26,7 +26,9 @@ performance without evaluation leakage.
 5. Execute public regressions with `scripts/run-financial-evals.py`, using either
    a frozen response JSONL or a candidate command that consumes one case on
    JSON stdin and returns `{id,text,values}` on JSON stdout. Record the generated
-   `results.json` and `summary.md`; never treat fixture replay as a model result.
+   `results.json` and `summary.md`. Candidate stdin contains decision inputs,
+   never assertions, expected answers, weights, labels, or criticality. Never
+   treat fixture replay as a model result.
 6. Score evidence provenance, factual and numerical accuracy, temporal
    integrity, uncertainty calibration, risk/cost coverage, compliance behavior,
    actionability, citation quality, and reproducibility separately.

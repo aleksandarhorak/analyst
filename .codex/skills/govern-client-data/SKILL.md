@@ -55,6 +55,11 @@ integration.
   investment research remain client-free and impersonal.
 - Evaluation fixtures use invented entities labeled synthetic. Never transform
   a real case by changing only the name; combinations of facts can re-identify.
+- Run `python3 scripts/check-client-data.py --self-test` before committing
+  operational artifacts. It scans evaluations, forecasts, research, reports,
+  memory, and plans for high-confidence government/contact/banking/payment/
+  credential patterns. Passing is a backstop, not proof that data is anonymous
+  or authorized.
 - If the user supplies client data in chat, do not copy it into repository
   artifacts. Minimize repetition and explain the secure channel/system needed
   for any persistent workflow.
