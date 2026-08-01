@@ -16,6 +16,8 @@ from typing import Any
 
 
 MAX_CANDIDATE_BYTES = 2 * 1024 * 1024
+CANDIDATE_INPUT_FIELDS = ("id", "lane", "prompt", "decision_cutoff", "context")
+CASE_FIELDS = set(CANDIDATE_INPUT_FIELDS) | {"assertions"}
 
 
 class EvaluationError(RuntimeError):
@@ -28,6 +30,10 @@ def canonical(value: Any) -> bytes:
 
 def digest(value: Any) -> str:
     return hashlib.sha256(canonical(value)).hexdigest()
+
+
+def file_digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def load_jsonl(path: Path, kind: str) -> list[dict[str, Any]]:
@@ -59,6 +65,19 @@ def validate_cases(cases: list[dict[str, Any]]) -> None:
         if case_id in seen:
             raise EvaluationError(f"duplicate case id: {case_id}")
         seen.add(case_id)
+        if unexpected := case.keys() - CASE_FIELDS:
+            raise EvaluationError(f"case {case_id} has unsupported fields: {sorted(unexpected)}")
+        for field in ("lane", "prompt", "decision_cutoff"):
+            if not isinstance(case[field], str) or not case[field].strip():
+                raise EvaluationError(f"case {case_id} {field} must be a nonempty string")
+        try:
+            cutoff = datetime.fromisoformat(case["decision_cutoff"].replace("Z", "+00:00"))
+        except ValueError as error:
+            raise EvaluationError(f"case {case_id} decision_cutoff must be ISO 8601") from error
+        if cutoff.tzinfo is None:
+            raise EvaluationError(f"case {case_id} decision_cutoff must include a timezone")
+        if "context" in case and not isinstance(case["context"], dict):
+            raise EvaluationError(f"case {case_id} context must be an object")
         assertions = case["assertions"]
         if not isinstance(assertions, list) or not assertions:
             raise EvaluationError(f"case {case_id} has no assertions")
@@ -72,9 +91,47 @@ def validate_cases(cases: list[dict[str, Any]]) -> None:
                 "contains", "not_contains", "regex", "not_regex", "equals", "probability_sum"
             }:
                 raise EvaluationError(f"case {case_id} has unsupported assertion type")
+            if not isinstance(assertion["dimension"], str) or not assertion["dimension"].strip():
+                raise EvaluationError(f"case {case_id} assertion dimension must be nonempty")
+            if not isinstance(assertion["label"], str) or not assertion["label"].strip():
+                raise EvaluationError(f"case {case_id} assertion label must be nonempty")
+            if not isinstance(assertion["critical"], bool):
+                raise EvaluationError(f"case {case_id} assertion critical must be boolean")
             weight = assertion.get("weight", 1.0)
-            if isinstance(weight, bool) or not isinstance(weight, (int, float)) or weight <= 0:
+            if (
+                isinstance(weight, bool)
+                or not isinstance(weight, (int, float))
+                or not math.isfinite(float(weight))
+                or weight <= 0
+            ):
                 raise EvaluationError(f"case {case_id} assertion weight must be positive")
+            assertion_type = assertion["type"]
+            if assertion_type in {"contains", "not_contains"}:
+                if not isinstance(assertion.get("value"), str) or not assertion["value"]:
+                    raise EvaluationError(f"case {case_id} text assertion requires a value")
+            elif assertion_type in {"regex", "not_regex"}:
+                if not isinstance(assertion.get("pattern"), str) or not assertion["pattern"]:
+                    raise EvaluationError(f"case {case_id} regex assertion requires a pattern")
+                try:
+                    re.compile(assertion["pattern"])
+                except re.error as error:
+                    raise EvaluationError(f"case {case_id} has invalid regex: {error}") from error
+            else:
+                if not isinstance(assertion.get("path"), str) or not assertion["path"]:
+                    raise EvaluationError(f"case {case_id} structured assertion requires a path")
+                tolerance = assertion.get("tolerance", 0.0 if assertion_type == "equals" else 1e-12)
+                if (
+                    isinstance(tolerance, bool)
+                    or not isinstance(tolerance, (int, float))
+                    or not math.isfinite(float(tolerance))
+                    or tolerance < 0
+                ):
+                    raise EvaluationError(f"case {case_id} assertion tolerance must be nonnegative")
+
+
+def candidate_payload(case: dict[str, Any]) -> dict[str, Any]:
+    """Return only decision inputs; never expose assertions or expected answers."""
+    return {field: case[field] for field in CANDIDATE_INPUT_FIELDS if field in case}
 
 
 def response_index(responses: list[dict[str, Any]], case_ids: set[str]) -> dict[str, dict[str, Any]]:
@@ -102,7 +159,7 @@ def run_candidate(command: list[str], case: dict[str, Any], timeout: float) -> d
     try:
         completed = subprocess.run(
             command,
-            input=canonical(case),
+            input=canonical(candidate_payload(case)),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=timeout,
@@ -186,6 +243,100 @@ def evaluate_assertion(assertion: dict[str, Any], response: dict[str, Any]) -> t
     raise EvaluationError(f"unsupported assertion type: {assertion_type}")
 
 
+def score_responses(
+    cases: list[dict[str, Any]], responses: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
+    case_results: list[dict[str, Any]] = []
+    total_weight = 0.0
+    passed_weight = 0.0
+    critical_failures = 0
+    dimensions: dict[str, dict[str, float]] = {}
+    for case in cases:
+        response = responses[case["id"]]
+        assertions: list[dict[str, Any]] = []
+        case_weight = 0.0
+        case_passed = 0.0
+        case_critical = False
+        for assertion in case["assertions"]:
+            passed, detail = evaluate_assertion(assertion, response)
+            weight = float(assertion.get("weight", 1.0))
+            case_weight += weight
+            total_weight += weight
+            dimension = assertion["dimension"]
+            dimension_result = dimensions.setdefault(
+                dimension, {"passed_weight": 0.0, "total_weight": 0.0}
+            )
+            dimension_result["total_weight"] += weight
+            if passed:
+                case_passed += weight
+                passed_weight += weight
+                dimension_result["passed_weight"] += weight
+            if not passed and assertion["critical"]:
+                case_critical = True
+                critical_failures += 1
+            assertions.append(
+                {
+                    "label": assertion["label"],
+                    "dimension": dimension,
+                    "critical": assertion["critical"],
+                    "passed": passed,
+                    "detail": detail,
+                }
+            )
+        case_results.append(
+            {
+                "id": case["id"],
+                "lane": case["lane"],
+                "case_sha256": digest(case),
+                "candidate_input_sha256": digest(candidate_payload(case)),
+                "response_sha256": digest(response),
+                "score": case_passed / case_weight,
+                "critical_failure": case_critical,
+                "assertions": assertions,
+            }
+        )
+    return {
+        "score": passed_weight / total_weight,
+        "critical_failure_count": critical_failures,
+        "dimensions": {
+            name: values | {"score": values["passed_weight"] / values["total_weight"]}
+            for name, values in sorted(dimensions.items())
+        },
+        "cases": case_results,
+    }
+
+
+def aggregate_dimensions(run_results: list[dict[str, Any]]) -> dict[str, dict[str, float]]:
+    aggregated: dict[str, dict[str, float]] = {}
+    for run in run_results:
+        for name, values in run["dimensions"].items():
+            result = aggregated.setdefault(name, {"passed_weight": 0.0, "total_weight": 0.0})
+            result["passed_weight"] += values["passed_weight"]
+            result["total_weight"] += values["total_weight"]
+    return {
+        name: values | {"score": values["passed_weight"] / values["total_weight"]}
+        for name, values in sorted(aggregated.items())
+    }
+
+
+def aggregate_cases(run_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    aggregated: list[dict[str, Any]] = []
+    for index, first in enumerate(run_results[0]["cases"]):
+        cases = [run["cases"][index] for run in run_results]
+        scores = [case["score"] for case in cases]
+        aggregated.append(
+            first
+            | {
+                "score": sum(scores) / len(scores),
+                "score_min": min(scores),
+                "score_max": max(scores),
+                "critical_failure": any(case["critical_failure"] for case in cases),
+                "response_sha256s": [case["response_sha256"] for case in cases],
+            }
+        )
+    return aggregated
+
+
 def render_summary(result: dict[str, Any]) -> str:
     lines = [
         f"# Financial Agent Evaluation: {result['run_id']}",
@@ -194,12 +345,21 @@ def render_summary(result: dict[str, Any]) -> str:
         f"- Score: {result['score']:.3f}",
         f"- Critical failures: {result['critical_failure_count']}",
         f"- Cases: {result['case_count']}",
+        f"- Repeat count: {result['repeat_count']}",
+        f"- Score range: {result['score_min']:.3f} to {result['score_max']:.3f}",
+        f"- Score variance: {result['score_variance']:.6f}",
         f"- Model version: `{result['model_version']}`",
         f"- Tool version: `{result['tool_version']}`",
-        "",
-        "| Case | Lane | Score | Critical failure |",
-        "|---|---|---:|---|",
     ]
+    baseline = result.get("baseline")
+    if baseline:
+        lines.extend(
+            [
+                f"- Baseline score: {baseline['score']:.3f}",
+                f"- Delta versus baseline: {result['delta_vs_baseline']:+.3f}",
+            ]
+        )
+    lines.extend(["", "| Case | Lane | Score | Critical failure |", "|---|---|---:|---|"])
     for case in result["cases"]:
         lines.append(
             f"| `{case['id']}` | {case['lane']} | {case['score']:.3f} | "
@@ -216,98 +376,95 @@ def main() -> int:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--responses", type=Path)
     source.add_argument("--candidate-command", nargs=argparse.REMAINDER)
+    parser.add_argument("--baseline-responses", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--model-version", required=True)
     parser.add_argument("--tool-version", required=True)
     parser.add_argument("--minimum-score", type=float, default=0.9)
     parser.add_argument("--timeout", type=float, default=60.0)
+    parser.add_argument("--repeat-count", type=int, default=1)
     args = parser.parse_args()
 
     try:
-        if not 0 <= args.minimum_score <= 1 or args.timeout <= 0:
-            raise EvaluationError("minimum-score must be in [0,1] and timeout positive")
+        if not 0 <= args.minimum_score <= 1 or args.timeout <= 0 or args.repeat_count <= 0:
+            raise EvaluationError(
+                "minimum-score must be in [0,1], timeout positive, and repeat-count positive"
+            )
+        if args.responses and args.repeat_count != 1:
+            raise EvaluationError("frozen responses support repeat-count 1 only")
         if args.output_dir.exists():
             raise EvaluationError(f"output directory already exists: {args.output_dir}")
         args.output_dir.parent.mkdir(parents=True, exist_ok=True)
         args.output_dir.mkdir()
-        cases = load_jsonl(args.cases, "case")
-        if args.holdout_cases:
-            cases.extend(load_jsonl(args.holdout_cases, "holdout case"))
+        public_cases = load_jsonl(args.cases, "case")
+        holdout_cases = load_jsonl(args.holdout_cases, "holdout case") if args.holdout_cases else []
+        cases = [*public_cases, *holdout_cases]
         validate_cases(cases)
         case_ids = {case["id"] for case in cases}
-        responses = (
-            response_index(load_jsonl(args.responses, "response"), case_ids)
-            if args.responses
-            else {case["id"]: run_candidate(args.candidate_command or [], case, args.timeout) for case in cases}
-        )
-
-        case_results: list[dict[str, Any]] = []
-        total_weight = 0.0
-        passed_weight = 0.0
-        critical_failures = 0
-        dimensions: dict[str, dict[str, float]] = {}
-        for case in cases:
-            response = responses[case["id"]]
-            assertions: list[dict[str, Any]] = []
-            case_weight = 0.0
-            case_passed = 0.0
-            case_critical = False
-            for assertion in case["assertions"]:
-                passed, detail = evaluate_assertion(assertion, response)
-                weight = float(assertion.get("weight", 1.0))
-                case_weight += weight
-                total_weight += weight
-                dimension = assertion["dimension"]
-                dimension_result = dimensions.setdefault(dimension, {"passed_weight": 0.0, "total_weight": 0.0})
-                dimension_result["total_weight"] += weight
-                if passed:
-                    case_passed += weight
-                    passed_weight += weight
-                    dimension_result["passed_weight"] += weight
-                if not passed and assertion["critical"]:
-                    case_critical = True
-                    critical_failures += 1
-                assertions.append(
-                    {
-                        "label": assertion["label"],
-                        "dimension": dimension,
-                        "critical": bool(assertion["critical"]),
-                        "passed": passed,
-                        "detail": detail,
-                    }
-                )
-            case_results.append(
+        response_runs: list[dict[str, dict[str, Any]]]
+        if args.responses:
+            response_runs = [response_index(load_jsonl(args.responses, "response"), case_ids)]
+        else:
+            response_runs = [
                 {
-                    "id": case["id"],
-                    "lane": case["lane"],
-                    "case_sha256": digest(case),
-                    "response_sha256": digest(response),
-                    "score": case_passed / case_weight,
-                    "critical_failure": case_critical,
-                    "assertions": assertions,
+                    case["id"]: run_candidate(args.candidate_command or [], case, args.timeout)
+                    for case in cases
                 }
-            )
-        score = passed_weight / total_weight
+                for _ in range(args.repeat_count)
+            ]
+        run_results = [score_responses(cases, responses) for responses in response_runs]
+        scores = [run["score"] for run in run_results]
+        score = sum(scores) / len(scores)
+        score_variance = sum((value - score) ** 2 for value in scores) / len(scores)
+        critical_failures = sum(run["critical_failure_count"] for run in run_results)
         decision = "reject" if critical_failures or score < args.minimum_score else "accept"
+        baseline = None
+        if args.baseline_responses:
+            baseline_responses = response_index(
+                load_jsonl(args.baseline_responses, "baseline response"), case_ids
+            )
+            baseline = score_responses(cases, baseline_responses)
+            baseline["decision"] = (
+                "reject"
+                if baseline["critical_failure_count"] or baseline["score"] < args.minimum_score
+                else "accept"
+            )
         result = {
             "schema_version": "financial-agent-evaluation-v1",
             "run_id": args.run_id,
             "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
             "model_version": args.model_version,
             "tool_version": args.tool_version,
-            "public_cases_sha256": digest(cases[: len(load_jsonl(args.cases, "case"))]),
-            "holdout_used": args.holdout_cases is not None,
+            "public_cases_sha256": digest(public_cases),
+            "holdout_cases_sha256": digest(holdout_cases) if holdout_cases else None,
+            "holdout_used": bool(holdout_cases),
+            "rubric_sha256": digest(
+                [{"id": case["id"], "assertions": case["assertions"]} for case in cases]
+            ),
+            "scorer_sha256": file_digest(Path(__file__)),
+            "candidate_command_sha256": (
+                digest(args.candidate_command) if args.candidate_command else None
+            ),
+            "frozen_responses_sha256": file_digest(args.responses) if args.responses else None,
+            "baseline_responses_sha256": (
+                file_digest(args.baseline_responses) if args.baseline_responses else None
+            ),
+            "candidate_input_fields": list(CANDIDATE_INPUT_FIELDS),
             "case_count": len(cases),
+            "repeat_count": len(run_results),
             "minimum_score": args.minimum_score,
             "score": score,
+            "score_min": min(scores),
+            "score_max": max(scores),
+            "score_variance": score_variance,
             "critical_failure_count": critical_failures,
             "decision": decision,
-            "dimensions": {
-                name: values | {"score": values["passed_weight"] / values["total_weight"]}
-                for name, values in sorted(dimensions.items())
-            },
-            "cases": case_results,
+            "dimensions": aggregate_dimensions(run_results),
+            "cases": aggregate_cases(run_results),
+            "runs": run_results,
+            "baseline": baseline,
+            "delta_vs_baseline": score - baseline["score"] if baseline else None,
         }
         (args.output_dir / "results.json").write_text(
             json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"

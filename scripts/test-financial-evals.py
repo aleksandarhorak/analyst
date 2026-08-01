@@ -51,9 +51,17 @@ def main() -> int:
         assert accepted.stdout.startswith("ACCEPT")
         result = json.loads((file_run / "results.json").read_text(encoding="utf-8"))
         assert result["decision"] == "accept"
-        assert result["case_count"] == 13
+        assert result["case_count"] == 21
         assert result["critical_failure_count"] == 0
         assert result["score"] == 1.0
+        assert result["repeat_count"] == 1
+        assert result["score_min"] == result["score_max"] == 1.0
+        assert result["score_variance"] == 0.0
+        assert result["holdout_cases_sha256"] is None
+        assert result["rubric_sha256"]
+        assert result["scorer_sha256"]
+        assert "assertions" not in result["candidate_input_fields"]
+        assert all(case["candidate_input_sha256"] for case in result["cases"])
         assert (file_run / "summary.md").is_file()
         overwrite = run(
             [*common(file_run, "overwrite"), "--responses", str(RESPONSES)], expected=1
@@ -64,11 +72,16 @@ def main() -> int:
         run(
             [
                 *common(command_run, "passing-command"),
+                "--repeat-count", "2",
                 "--candidate-command", sys.executable, str(CANDIDATE),
             ]
         )
         command_result = json.loads((command_run / "results.json").read_text(encoding="utf-8"))
         assert command_result["decision"] == "accept"
+        assert command_result["repeat_count"] == 2
+        assert len(command_result["runs"]) == 2
+        assert command_result["score_variance"] == 0.0
+        assert command_result["candidate_command_sha256"]
 
         broken_responses = []
         for line in RESPONSES.read_text(encoding="utf-8").splitlines():
@@ -89,7 +102,44 @@ def main() -> int:
         assert rejected_result["critical_failure_count"] >= 1
         assert rejected_result["decision"] == "reject"
 
-    print("PASS financial evaluations: file replay, candidate command, dimensions, and critical gate")
+        comparison_dir = root / "comparison"
+        run(
+            [
+                *common(comparison_dir, "baseline-comparison"),
+                "--baseline-responses", str(broken_path),
+                "--responses", str(RESPONSES),
+            ]
+        )
+        comparison = json.loads((comparison_dir / "results.json").read_text(encoding="utf-8"))
+        assert comparison["baseline"]["decision"] == "reject"
+        assert comparison["delta_vs_baseline"] > 0
+        assert comparison["baseline_responses_sha256"]
+
+        malformed_cases = root / "malformed-cases.jsonl"
+        malformed_case = json.loads(CASES.read_text(encoding="utf-8").splitlines()[0])
+        malformed_case["assertions"][0]["critical"] = "yes"
+        malformed_cases.write_text(json.dumps(malformed_case) + "\n", encoding="utf-8")
+        one_response = root / "one-response.jsonl"
+        one_response.write_text(
+            RESPONSES.read_text(encoding="utf-8").splitlines()[0] + "\n", encoding="utf-8"
+        )
+        malformed = run(
+            [
+                "--cases", str(malformed_cases),
+                "--output-dir", str(root / "malformed"),
+                "--run-id", "malformed",
+                "--model-version", "synthetic",
+                "--tool-version", "test",
+                "--responses", str(one_response),
+            ],
+            expected=1,
+        )
+        assert "critical must be boolean" in malformed.stderr
+
+    print(
+        "PASS financial evaluations: anti-leakage input, repeats, baseline comparison, "
+        "metadata, validation, dimensions, and critical gate"
+    )
     return 0
 
 

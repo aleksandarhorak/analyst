@@ -2,8 +2,14 @@
 
 `cases.jsonl` contains public, synthetic adverse cases. The runner evaluates a
 frozen JSONL response set or invokes an external candidate command once per case
-over JSON stdin/stdout. It records hashes, per-assertion results, dimensions,
-tool/model versions, critical failures, and an accept/reject decision.
+and repeat over JSON stdin/stdout. Candidate stdin contains only `id`, `lane`,
+`prompt`, `decision_cutoff`, and optional public `context`; assertions, expected
+values, weights, labels, and criticality never cross the candidate boundary.
+
+The result records public and holdout hashes separately, the frozen rubric and
+scorer hashes, candidate-command or response hashes, per-assertion results,
+dimensions, repeat score range, tool/model versions, baseline delta when
+provided, critical failures, and an accept/reject decision.
 
 ```bash
 python3 scripts/run-financial-evals.py \
@@ -20,6 +26,13 @@ holdouts outside normal instructions and repository history; provide them with
 credentials, proprietary prompts, or licensed data in public fixtures or run
 logs.
 
+Use `--repeat-count` for stochastic external candidates. Use
+`--baseline-responses` for a frozen baseline covering exactly the same public
+and controlled-holdout cases. Because `--candidate-command` consumes the
+remaining command line, place runner options before it.
+
 Any failed critical assertion rejects the candidate, regardless of its average
 score. Deterministic assertions test explicit contracts; qualified blinded
 review remains necessary for nuanced correctness and investment usefulness.
+The committed passing responses and replay candidate are harness tests only;
+they are never evidence of model performance or forecast skill.
