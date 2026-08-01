@@ -51,7 +51,7 @@ def main() -> int:
         assert accepted.stdout.startswith("ACCEPT")
         result = json.loads((file_run / "results.json").read_text(encoding="utf-8"))
         assert result["decision"] == "accept"
-        assert result["case_count"] == 21
+        assert result["case_count"] == 28
         assert result["critical_failure_count"] == 0
         assert result["score"] == 1.0
         assert result["repeat_count"] == 1
@@ -60,9 +60,18 @@ def main() -> int:
         assert result["holdout_cases_sha256"] is None
         assert result["rubric_sha256"]
         assert result["scorer_sha256"]
+        assert result["review_bundle_sha256"]
         assert "assertions" not in result["candidate_input_fields"]
         assert all(case["candidate_input_sha256"] for case in result["cases"])
         assert (file_run / "summary.md").is_file()
+        review_items = [
+            json.loads(line)
+            for line in (file_run / "review-bundle.jsonl").read_text(encoding="utf-8").splitlines()
+        ]
+        assert len(review_items) == 28
+        assert all("assertions" not in item["case"] for item in review_items)
+        assert all("expected" not in json.dumps(item["case"]) for item in review_items)
+        assert all(item["response"]["id"] == item["case"]["id"] for item in review_items)
         overwrite = run(
             [*common(file_run, "overwrite"), "--responses", str(RESPONSES)], expected=1
         )
@@ -82,6 +91,9 @@ def main() -> int:
         assert len(command_result["runs"]) == 2
         assert command_result["score_variance"] == 0.0
         assert command_result["candidate_command_sha256"]
+        assert len(
+            (command_run / "review-bundle.jsonl").read_text(encoding="utf-8").splitlines()
+        ) == 56
 
         broken_responses = []
         for line in RESPONSES.read_text(encoding="utf-8").splitlines():

@@ -337,6 +337,21 @@ def aggregate_cases(run_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return aggregated
 
 
+def review_bundle(cases: list[dict[str, Any]], response_runs: list[dict[str, dict]]) -> bytes:
+    """Render candidate prompts/responses for blinded review without scoring keys."""
+    lines: list[bytes] = []
+    for repeat_index, responses in enumerate(response_runs, start=1):
+        for case in cases:
+            record = {
+                "schema_version": "financial-agent-review-item-v1",
+                "repeat_index": repeat_index,
+                "case": candidate_payload(case),
+                "response": responses[case["id"]],
+            }
+            lines.append(canonical(record))
+    return b"\n".join(lines) + b"\n"
+
+
 def render_summary(result: dict[str, Any]) -> str:
     lines = [
         f"# Financial Agent Evaluation: {result['run_id']}",
@@ -414,6 +429,9 @@ def main() -> int:
                 for _ in range(args.repeat_count)
             ]
         run_results = [score_responses(cases, responses) for responses in response_runs]
+        review_bytes = review_bundle(cases, response_runs)
+        review_path = args.output_dir / "review-bundle.jsonl"
+        review_path.write_bytes(review_bytes)
         scores = [run["score"] for run in run_results]
         score = sum(scores) / len(scores)
         score_variance = sum((value - score) ** 2 for value in scores) / len(scores)
@@ -450,6 +468,7 @@ def main() -> int:
             "baseline_responses_sha256": (
                 file_digest(args.baseline_responses) if args.baseline_responses else None
             ),
+            "review_bundle_sha256": hashlib.sha256(review_bytes).hexdigest(),
             "candidate_input_fields": list(CANDIDATE_INPUT_FIELDS),
             "case_count": len(cases),
             "repeat_count": len(run_results),

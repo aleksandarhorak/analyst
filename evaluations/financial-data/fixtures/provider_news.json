@@ -24,6 +24,9 @@
       "publisher": "Synthetic Wire",
       "canonical_url": "https://news.example/synthetic-update",
       "correction_status": "original",
+      "document_id": "synthetic-document-1",
+      "headline": "Synthetic issuer update",
+      "updated_at": "2025-08-01T10:01:00Z",
       "source_locator": "article:synthetic-1"
     }
   ],

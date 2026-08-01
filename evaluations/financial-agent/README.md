@@ -9,7 +9,9 @@ values, weights, labels, and criticality never cross the candidate boundary.
 The result records public and holdout hashes separately, the frozen rubric and
 scorer hashes, candidate-command or response hashes, per-assertion results,
 dimensions, repeat score range, tool/model versions, baseline delta when
-provided, critical failures, and an accept/reject decision.
+provided, critical failures, and an accept/reject decision. Each run also emits
+a hash-bound `review-bundle.jsonl` containing candidate prompts and responses
+without scoring assertions or expected answers.
 
 ```bash
 python3 scripts/run-financial-evals.py \
@@ -37,7 +39,14 @@ review remains necessary for nuanced correctness and investment usefulness.
 The committed passing responses and replay candidate are harness tests only;
 they are never evidence of model performance or forecast skill.
 
-## Latest Harness Verification
+The current public suite has 28 cases: the original financial/safety cases plus
+seven parallel-work cases covering integrated delegation, lane selection,
+shared-worktree ownership, cutoff drift, client-data isolation, delegated
+order/MNPI refusal, and conflicting-lane synthesis. Use the
+[real evaluation runbook](../../docs/EVALUATION.md) for controlled candidates,
+holdouts, review bundles, two-reviewer validation, and adjudication.
+
+## Historical Harness Verification
 
 At `2026-08-01T00:53:46Z`, the fixture replay was run three times against all
 21 public cases with the passing fixture as the frozen baseline. It scored
@@ -49,3 +58,7 @@ runner. This verifies determinism, anti-leakage transport, scoring, repeats,
 baseline comparison, and the critical gate only. No real candidate, controlled
 hidden set, financial outcome, or blinded human review was available, so it
 supports no model-quality or investment-skill claim.
+
+This historical run predates the seven parallel-work cases. Current deterministic
+regressions cover all 28 cases, but no new fixture run changes the absence of a
+real candidate, protected holdout, or independent human review.

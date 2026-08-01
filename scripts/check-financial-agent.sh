@@ -186,6 +186,12 @@ else
   fail 'executable financial-agent evaluation regressions failed'
 fi
 
+if python3 scripts/test-human-review.py; then
+  pass 'blinded human-review workflow regressions'
+else
+  fail 'blinded human-review workflow regressions failed'
+fi
+
 if python3 scripts/test-forecast-calibration.py; then
   pass 'forecast ledger and calibration regressions'
 else
@@ -198,11 +204,25 @@ else
   fail 'client-data governance and leak check failed'
 fi
 
+if python3 scripts/check-docs.py; then
+  pass 'documentation links and user-guide contracts'
+else
+  fail 'documentation links or user-guide contracts failed'
+fi
+
 for phrase in 'point-in-time' 'Never promise returns' 'does not grant authority to place orders'; do
   if grep -Fq "$phrase" AGENTS.md; then
     pass "core guardrail is present: ${phrase}"
   else
     fail "core guardrail is missing: ${phrase}"
+  fi
+done
+
+for phrase in 'Use available subagents' 'minimum number needed' 'same file or shared' 'Never delegate final suitability' 'owns the final synthesis'; do
+  if grep -Fq "$phrase" AGENTS.md; then
+    pass "parallel-work guardrail is present: ${phrase}"
+  else
+    fail "parallel-work guardrail is missing: ${phrase}"
   fi
 done
 
